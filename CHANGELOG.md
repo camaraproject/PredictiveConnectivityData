@@ -14,7 +14,7 @@ The below sections record the changes for each API version in each release as fo
 # r1.2
 
 ## Release Notes
-This release contains the definition and documentation of 
+This public release contains the definition and documentation of 
 * predictive-connectivity-data v0.1.0
 
 The API definition(s) are based on
@@ -23,7 +23,7 @@ The API definition(s) are based on
 
 ## predictive-connectivity-data v0.1.0
 
-This is a release candidate for the CAMARA Meta Release Fall25 release of the Predictive Connectivity Data API, version v0.1.0. It contains mainly alignments with the Commonalities v0.6.0.
+This is the public release for the CAMARA Meta Release Fall25 release of the Predictive Connectivity Data API, version v0.1.0. It contains mainly alignments with the Commonalities v0.6.0.
 
 - API definition **with inline documentation**:
   - OpenAPI [YAML spec file](https://github.com/camaraproject/PredictiveConnectivityData/blob/r1.2/code/API_definitions/predictive-connectivity-data.yaml)
@@ -47,7 +47,7 @@ In the following there is the list of the modifications with respect to the prev
  ### New Contributors
 * @eric-murray made their first contribution in https://github.com/camaraproject/PredictiveConnectivityData/pull/30
 
-**Full Changelog**: https://github.com/camaraproject/PredictiveConnectivityData/compare/r1.1...r1.2
+**Full Changelog**: https://github.com/camaraproject/PredictiveConnectivityData/commits/r1.2
 
 # r1.1
 
