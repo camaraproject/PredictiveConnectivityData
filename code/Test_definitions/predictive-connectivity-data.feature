@@ -1,4 +1,4 @@
-Feature: CAMARA Predictive Connectivity Data API, vwip
+Feature: CAMARA Predictive Connectivity Data API, v0.1
     # Input to be provided by the implementation to the tester
     #
     # Implementation indications:
@@ -21,7 +21,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
 
     Background: Common retrieveConnectivity setup
         Given an environment at "apiRoot"
-        And the resource "/predictive-connectivity-data/vwip/retrieve"
+        And the resource "/predictive-connectivity-data/v0.1/retrieve"
         And the header "Content-Type" is set to "application/json"
         And the header "Authorization" is set to a valid access token
         And the header "x-correlator" complies with the schema at "#/components/schemas/XCorrelator"
@@ -99,7 +99,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
         And the response header "x-correlator" has same value as the request header "x-correlator"
         And the response includes property "$.operationId"
         And the request with the response body will be received at the address of the request property "$.sink"
-        And the request will have header "Authorization" set to "Bearer: " + the value of the request property "$.sinkCredential.accessToken"
+        And the request will have header "Authorization" set to "Bearer " + the value of the request property "$.sinkCredential.accessToken"
         And the request will have property "$.operationId" equal to response property "$.operationId"
         And the request body complies with the OAS schema at "/components/schemas/ConnectivityDataAsyncResponse"
 
@@ -122,7 +122,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
         And the response includes property "$.operationId"
         And there have been some problem processing the request asynchronously
         And the request with the response body will be received at the address of the request property "$.sink"
-        And the request will have header "Authorization" set to "Bearer: " + the value of the request property "$.sinkCredential.accessToken"
+        And the request will have header "Authorization" set to "Bearer " + the value of the request property "$.sinkCredential.accessToken"
         And the request will have property "$.operationId" equal to response property "$.operationId"
         And the request body complies with the OAS schema at "/components/schemas/ConnectivityDataAsyncResponse"
         And the request body will have property "$.status" equal to "OPERATION_NOT_COMPLETED"
@@ -169,7 +169,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
         And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" has only 1 item, corresponding to the layer containing the requested height
         And the response property "$.requestedHeight" is equal to the request property "$.height"
 
-    # If signal strengths is not supported by the implementation this scenario will not apply. Therefore the request body property "$.includeSignalStrength will be ignored and only connectivity quality will be returned.
+    # If signal strength is not supported by the implementation this scenario will not apply. Therefore the request body property "$.includeSignalStrength" will be ignored and only connectivity quality will be returned.
     @predictive_connectivity_data_09_include_signal_strength
     Scenario: Validate success response for a request including signal strength
         Given the request body property "$.area" is set to a valid testing area within supported regions
@@ -373,7 +373,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
 
     @predictive_connectivity_data_400.15_max_time_period_exceeded
     Scenario: Error 400 when indicated date-time period is greater than the maximum allowed
-        Given the request body property "$.startTime" is set to a valid testing future
+        Given the request body property "$.startTime" is set to a valid testing future date-time
         And the request body property "$.endTime" is set to a future date-time that exceeds the supported duration from the start time.
         When the request "retrieveConnectivity" is sent
         Then the response status code is 400
@@ -431,7 +431,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     # Error 403 scenarios
 
     @predictive_connectivity_data_403.01_invalid_token_permissions
-    Scenario: Error response for no header "Authorization"
+    Scenario: Error response for invalid access token permissions
         # To test this scenario, it will be necessary to obtain a token without the required scope
         Given the header "Authorization" is set to an access token without the required scope
         And the request body is set to a valid request body
