@@ -59,7 +59,7 @@ Feature: CAMARA Predictive Connectivity Data API, v0.1
     And the response property "$.status" value is "PART_OF_AREA_NOT_SUPPORTED"
     And the response property "$.timedConnectivityData[*].startTime" is equal to or later than request body property "$.startTime"
     And the response property "$.timedConnectivityData[*].endTime" is equal to or earlier than request body property "$.endTime"
-    And there is at least one item in response property "$.timedConnectivityData[*].cellConnectivityData[*]" 
+    And there is at least one item in response property "$.timedConnectivityData[*].cellConnectivityData[*]"
     And that item has an array property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" containing only "ND" values
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities" is not empty
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerSignalStrengths" is not included in the response
