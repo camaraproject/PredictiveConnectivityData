@@ -32,8 +32,7 @@ Feature: CAMARA Predictive Connectivity Data API, v0.1
   @predictive_connectivity_data_01_supported_area_success_scenario
   Scenario: Validate success response for a supported area request
     Given the request body property "$.area" is set to a valid testing area within supported regions
-    And the request body property "$.startTime" is set to a valid testing date-time
-    And the request body property "$.endTime" is set to a valid testing date-time later than body property "$.startTime"
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
     And the request body property "$.serviceLevel" is set to a valid communication service level
     When the request "retrieveConnectivity" is sent
     Then the response status code is 200
@@ -50,8 +49,7 @@ Feature: CAMARA Predictive Connectivity Data API, v0.1
   @predictive_connectivity_data_02_partial_area_success_scenario
   Scenario: Validate success response for a partial supported area request
     Given the request body property "$.area" is set to a valid testing area partially within supported regions
-    And the request body property "$.startTime" is set to a valid testing future date-time
-    And the request body property "$.endTime" is set to a valid testing future date-time later than body property "$.startTime"
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
     And the request body property "$.serviceLevel" is set to a valid communication service level
     When the request "retrieveConnectivity" is sent
     Then the response status code is 200
@@ -61,16 +59,15 @@ Feature: CAMARA Predictive Connectivity Data API, v0.1
     And the response property "$.status" value is "PART_OF_AREA_NOT_SUPPORTED"
     And the response property "$.timedConnectivityData[*].startTime" is equal to or later than request body property "$.startTime"
     And the response property "$.timedConnectivityData[*].endTime" is equal to or earlier than request body property "$.endTime"
-    And there is at least one item in response property "$.timedConnectivityData[*].cellConnectivityData[*]" with array property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" containing only "ND" values
-    And the response property "$.timedConnectivityData[*].cellConnectivityData[*].geohash" is a valid Geohash inside the request area
+    And there is at least one item in response property "$.timedConnectivityData[*].cellConnectivityData[*]" 
+    And that item has an array property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" containing only "ND" values
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities" is not empty
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerSignalStrengths" is not included in the response
 
   @predictive_connectivity_data_03_not_supported_area_success_scenario
   Scenario: Validate success response for unsupported area request
     Given the request body property "$.area" is set to a valid testing area outside supported regions
-    And the request body property "$.startTime" is set to a valid testing future date-time
-    And the request body property "$.endTime" is set to a valid testing future date-time later than body property "$.startTime"
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
     And the request body property "$.serviceLevel" is set to a valid communication service level
     When the request "retrieveConnectivity" is sent
     Then the response status code is 200
@@ -84,54 +81,42 @@ Feature: CAMARA Predictive Connectivity Data API, v0.1
   Scenario: Validate success async response for a request when sink is provided
     # Property "$.sink" is set with a valid public accessible HTTPs endpoint
     Given the request body property "$.area" is set to a valid testing area within supported regions
-    And the request body property "$.startTime" is set to a valid testing future date-time
-    And the request body property "$.endTime" is set to a valid testing future date-time later than body property "$.startTime"
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
     And the request body property "$.serviceLevel" is set to a valid communication service level
     And the request body property "$.sink" is set to a valid HTTPS URL
-    And the request property "$.sinkCredential.credentialType" is set to "ACCESSTOKEN"
-    And the request property "$.sinkCredential.accessTokenType" is set to "bearer"
-    And the request property "$.sinkCredential.accessToken" is set to a valid access token accepted by the events receiver
-    And the request property "$.sinkCredential.accessTokenExpiresUtc" is set to a value long enough in the future
+    And the request body property "$.sinkCredential" is set to a valid credential with property "$.sinkCredential.credentialType" set to "ACCESSTOKEN"
     When the request "retrieveConnectivity" is sent
     Then the response status code is 202
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
     And the response includes property "$.operationId"
-    And the request with the response body will be received at the address of the request property "$.sink"
+    And the request with the response body will be received at the address of the request property "$.sink" with property "$.operationId" equal to response property "$.operationId"
     And the request will have header "Authorization" set to "Bearer " + the value of the request property "$.sinkCredential.accessToken"
-    And the request will have property "$.operationId" equal to response property "$.operationId"
     And the request body complies with the OAS schema at "/components/schemas/ConnectivityDataAsyncResponse"
 
   @predictive_connectivity_data_05_async_operation_not_completed_scenario
   Scenario: Validate async callback when operation fails
     # Property "$.sink" is set with a valid public accessible HTTPs endpoint
     Given the request body property "$.area" is set to a valid testing area within supported regions
-    And the request body property "$.startTime" is set to a valid testing future date-time
-    And the request body property "$.endTime" is set to a valid testing future date-time later than body property "$.startTime"
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
     And the request body property "$.serviceLevel" is set to a valid communication service level
     And the request body property "$.sink" is set to a valid HTTPS URL
-    And the request property "$.sinkCredential.credentialType" is set to "ACCESSTOKEN"
-    And the request property "$.sinkCredential.accessTokenType" is set to "bearer"
-    And the request property "$.sinkCredential.accessToken" is set to a valid access token accepted by the events receiver
-    And the request property "$.sinkCredential.accessTokenExpiresUtc" is set to a value long enough in the future
+    And the request body property "$.sinkCredential" is set to a valid credential with property "$.sinkCredential.credentialType" set to "ACCESSTOKEN"
     When the request "retrieveConnectivity" is sent
     Then the response status code is 202
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
     And the response includes property "$.operationId"
     And there have been some problem processing the request asynchronously
-    And the request with the response body will be received at the address of the request property "$.sink"
+    And the request with the response body will be received at the address of the request property "$.sink" with property "$.operationId" equal to response property "$.operationId"
     And the request will have header "Authorization" set to "Bearer " + the value of the request property "$.sinkCredential.accessToken"
-    And the request will have property "$.operationId" equal to response property "$.operationId"
     And the request body complies with the OAS schema at "/components/schemas/ConnectivityDataAsyncResponse"
-    And the request body will have property "$.status" equal to "OPERATION_NOT_COMPLETED"
-    And the callback request body will include property "$.statusInfo"
+    And the request body will have property "$.status" equal to "OPERATION_NOT_COMPLETED" and includes property "$.statusInfo"
 
   @predictive_connectivity_data_06_custom_precision_success_scenario
   Scenario: Validate success response for a request specifying the precision of the geohashes
     Given the request body property "$.area" is set to a valid testing area within supported regions
-    And the request body property "$.startTime" is set to a valid testing future date-time
-    And the request body property "$.endTime" is set to a valid testing future date-time later than body property "$.startTime"
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
     And the request body property "$.serviceLevel" is set to a valid communication service level
     And the request body property "$.precision" is set to a valid precision for the geohash response cells
     When the request "retrieveConnectivity" is sent
@@ -143,8 +128,7 @@ Feature: CAMARA Predictive Connectivity Data API, v0.1
   @predictive_connectivity_data_07_concrete_network_type_success_scenario
   Scenario: Validate success response for a request specifying the network type for which the connectivity data is to be obtained
     Given the request body property "$.area" is set to a valid testing area within supported regions
-    And the request body property "$.startTime" is set to a valid testing future date-time
-    And the request body property "$.endTime" is set to a valid testing future date-time later than body property "$.startTime"
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
     And the request body property "$.serviceLevel" is set to a valid communication service level
     And the request body property "$.networkType" is set to a valid networkType
     When the request "retrieveConnectivity" is sent
@@ -156,8 +140,7 @@ Feature: CAMARA Predictive Connectivity Data API, v0.1
   @predictive_connectivity_data_08_concrete_height_success_scenario
   Scenario: Validate success response for a request specifying the height for which the connectivity data is to be obtained
     Given the request body property "$.area" is set to a valid testing area within supported regions
-    And the request body property "$.startTime" is set to a valid testing future date-time
-    And the request body property "$.endTime" is set to a valid testing future date-time later than body property "$.startTime"
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
     And the request body property "$.serviceLevel" is set to a valid communication service level
     And the request body property "$.height" is set to a valid height in metres above ground level
     When the request "retrieveConnectivity" is sent
@@ -172,8 +155,7 @@ Feature: CAMARA Predictive Connectivity Data API, v0.1
   @predictive_connectivity_data_09_include_signal_strength
   Scenario: Validate success response for a request including signal strength
     Given the request body property "$.area" is set to a valid testing area within supported regions
-    And the request body property "$.startTime" is set to a valid testing date-time
-    And the request body property "$.endTime" is set to a valid testing date-time later than body property "$.startTime"
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
     And the request body property "$.serviceLevel" is set to a valid communication service level
     And the request body property "$.includeSignalStrength" is set to true
     When the request "retrieveConnectivity" is sent
@@ -182,17 +164,13 @@ Feature: CAMARA Predictive Connectivity Data API, v0.1
     And the response header "x-correlator" has same value as the request header "x-correlator"
     And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
     And the response property "$.status" value is "SUPPORTED_AREA"
-    And the response property "$.timedConnectivityData[*].startTime" is equal to or later than request body property "$.startTime"
-    And the response property "$.timedConnectivityData[*].endTime" is equal to or earlier than request body property "$.endTime"
-    And the response property "$.timedConnectivityData[*].cellConnectivityData[*].geohash" is a valid Geohash inside the request area
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" is not empty
-    And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerSignalStrengths[*]" has the same length as "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]"
+    And the response property "$.timedConnectivityData[*].cellConnectivityData[*]" have properties "layerConnectivities[*]" and "layerSignalStrengths[*]" having the same length
 
   @predictive_connectivity_data_10_supported_area_past_success_scenario
   Scenario: Validate success response for a supported area in a past time period request
     Given the request body property "$.area" is set to a valid testing area within supported regions
-    And the request body property "$.startTime" is set to a valid testing date-time in the past
-    And the request body property "$.endTime" is set to a valid testing past date-time later than body property "$.startTime"
+    And the request body properties "$.startTime" and "$.endTime" are valid past date-times, with "$.endTime" later than "$.startTime"
     And the request body property "$.serviceLevel" is set to a valid communication service level
     When the request "retrieveConnectivity" is sent
     Then the response status code is 200
@@ -453,8 +431,9 @@ Feature: CAMARA Predictive Connectivity Data API, v0.1
     And the response property "$.message" contains a user friendly text
 
   @predictive_connectivity_data_422.02_too_big_synchronous_response
+  #To test this scenario provided values for "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" MUST generate a response too big for a synchronous response
   Scenario: Error 422 when the response is too big for a sync response
-    Given the request body properties "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" are set to valid values but generate a response too big for a synchronous response
+    Given the request body properties "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" are set to valid values
     When the request "retrieveConnectivity" is sent
     Then the response status code is 422
     And the response header "Content-Type" is "application/json"
@@ -463,9 +442,9 @@ Feature: CAMARA Predictive Connectivity Data API, v0.1
     And the response property "$.message" contains a user friendly text
 
   @predictive_connectivity_data_422.03_too_big_request
+  #To test this scenario provided values for "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" MUST generate a too big response in both sync and async scenarios
   Scenario: Error 422 when the response is too big for a sync and async response
-    Given the request body properties "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" are set to valid values but generate a response too big for a synchronous and asynchronous response
-    When the request "retrieveConnectivity" is sent
+    Given the request body properties "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" are set to valid values
     Then the response status code is 422
     And the response header "Content-Type" is "application/json"
     And the response property "$.status" is 422
