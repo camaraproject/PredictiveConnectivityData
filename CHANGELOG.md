@@ -33,10 +33,12 @@ This is the public release for the CAMARA Meta Release Fall25 release of the Pre
 In the following there is the list of the modifications with respect to the previous release.
 
 ### Added
-* N/A
+* Add precision, height and signal strenght to the wip version by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/25
 
 ### Changed
 * Alignment with Commonalities r3.3 by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/33
+* Define first WIP version of Predictive Connectivity Data API by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/20
+* Align commonalities with v0.6-rc1 by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/21
 
 ### Fixed
 * N/A
@@ -46,6 +48,8 @@ In the following there is the list of the modifications with respect to the prev
 
  ### New Contributors
 * @eric-murray made their first contribution in https://github.com/camaraproject/PredictiveConnectivityData/pull/30
+* @hdamker made their first contribution in https://github.com/camaraproject/PredictiveConnectivityData/pull/3
+* @albertoramosmonagas made their first contribution in https://github.com/camaraproject/PredictiveConnectivityData/pull/5
 
 **Full Changelog**: https://github.com/camaraproject/PredictiveConnectivityData/commits/r1.2
 
