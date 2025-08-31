@@ -48,7 +48,6 @@ In the following there is the list of the modifications with respect to the prev
 
  ### New Contributors
 * @eric-murray made their first contribution in https://github.com/camaraproject/PredictiveConnectivityData/pull/30
-* @hdamker made their first contribution in https://github.com/camaraproject/PredictiveConnectivityData/pull/3
 * @albertoramosmonagas made their first contribution in https://github.com/camaraproject/PredictiveConnectivityData/pull/5
 
 **Full Changelog**: https://github.com/camaraproject/PredictiveConnectivityData/commits/r1.2
