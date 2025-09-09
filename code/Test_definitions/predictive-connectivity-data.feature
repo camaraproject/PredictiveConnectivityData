@@ -1,4 +1,4 @@
-Feature: CAMARA Predictive Connectivity Data API, v0.1.0
+Feature: CAMARA Predictive Connectivity Data API, v0.1
   # Input to be provided by the implementation to the tester
   #
   # Implementation indications:
