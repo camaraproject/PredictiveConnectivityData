@@ -5,7 +5,9 @@ Checklist for predictive-connectivity-data v0.1.0 in r1.2
 | Nr | API release assets  | alpha | release-candidate |  initial<br>public | stable<br> public | Status | Reference information |
 |----|----------------------------------------------|:-----:|:-----------------:|:-------:|:------:|:----:|:----:|
 |  1 | API definition                               |   M   |         M         |    M    |    M   |  Y    | [link](/code/API_definitions/predictive-connectivity-data.yaml) |
-|  2 | Design guidelines from Commonalities applied |   O   |         M         |    M    |    M   |  Y    | [r3.3](https://github.com/camaraproject/Commonalities/releases/tag/r3.3) |
+|  2 | Design guidelines from Commonalities applied |   O   |         M         |    M    |    M   |  Y    | [r3.3](https://github.com/camaraproject/Commonalities/releases/tag/r3.3) - The asynchronous response currently does not follow the CloudEvents delivery format as required by Commonalities r3.3.
+See Issue #38.
+This will be addressed post-Fall’25 and released as v0.2.0 to ensure full compliance.  |
 |  3 | Guidelines from ICM applied                  |   O   |         M         |    M    |    M   |  Y    | [r3.3](https://github.com/camaraproject/IdentityAndConsentManagement/releases/tag/r3.3) |
 |  4 | API versioning convention applied            |   M   |         M         |    M    |    M   |  Y   | v0.1.0  |
 |  5 | API documentation                            |   M   |         M         |    M    |    M   |  Y    | [inline in YAML](/code/API_definitions/predictive-connectivity-data.yaml) |
