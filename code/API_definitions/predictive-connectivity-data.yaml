@@ -130,7 +130,7 @@ externalDocs:
   description: Product documentation at CAMARA.
   url: https://github.com/camaraproject/PredictiveConnectivityData
 servers:
-  - url: "{apiRoot}/predictive-connectivity-data/v0.1"
+  - url: "{apiRoot}/predictive-connectivity-data/vwip"
     variables:
       apiRoot:
         default: https://localhost:9091
