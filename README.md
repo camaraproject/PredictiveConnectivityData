@@ -44,7 +44,7 @@ For changes see [CHANGELOG.md](https://github.com/camaraproject/PredictiveConnec
 
 * Meetings are held virtually <!-- for new, independent Sandbox API repositories request a meeting link from the LF admin team or replace the information with the existing meeting information of the Sub Project -->
 
-* Schedule: Montlhy on Tuesdays, 10:00–11:00 UTC  
+* Schedule: Monthly on Tuesdays, 10:00–11:00 UTC  
   (corresponds to 12:00–13:00 CEST, 06:00–07:00 EDT during Daylight Saving Time)
   * [Registration / Join](https://zoom-lfx.platform.linuxfoundation.org/meeting/95479380109?password=0386fbda-1fb5-4e1a-8687-7b81fe8cacfa&invite=true)
   * Minutes: Access [meeting minutes](https://lf-camaraproject.atlassian.net/wiki/x/PAAnBw) 
