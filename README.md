@@ -24,21 +24,25 @@ Sandbox API Repository to describe, develop, document, and test the PredictiveCo
 * Started: April 2025
 <!-- * Incubating stage since: {{incubation date}} --> 
 
+<!-- CAMARA:RELEASE-INFO:START -->
+<!-- The following section is automatically maintained by the CAMARA project-administration tooling: https://github.com/camaraproject/project-administration -->
+
 ## Release Information
 
-**Version Control Notice:** This project undergoes active development with frequent updates to the main branch. No backward compatibility is guaranteed for any code in development branches, including main, until an official release is published. Code changes, including potential reversions, may occur between commits. We recommend using the latest official release version.
+> [!NOTE]
+> Please be aware that the project will have frequent updates to the main branch. There are no compatibility guarantees associated with code in any branch, including main, until a new release is created. For example, changes may be reverted before a release is created. **For best results, use the latest available release**.
 
-The **NEW** latest public release of Predictive Connectivity Data is [r1.2](https://github.com/camaraproject/PredictiveConnectivityData/releases/tag/r1.2) and contains version 0.1.0.
-- [[YAML]](https://github.com/camaraproject/PredictiveConnectivityData/blob/r1.2/code/API_definitions/predictive-connectivity-data.yaml)
-- [[View it on ReDoc]](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/camaraproject/PredictiveConnectivityData/r1.2/code/API_definitions/predictive-connectivity-data.yaml&nocors)
-- [[View it on Swagger Editor]](https://camaraproject.github.io/swagger-ui/?url=https://raw.githubusercontent.com/camaraproject/PredictiveConnectivityData/r1.2/code/API_definitions/predictive-connectivity-data.yaml)
-<!-- Optional: an explicit listing of the latest (pre-)release with additional information, e.g. links to the API definitions -->
-<!-- In addition use/uncomment one or multiple the following alternative options when becoming applicable -->
-<!-- Pre-releases of this sub project are available in https://github.com/camaraproject/PredictiveConnectivityData/releases -->
-<!-- The latest public release is available here: https://github.com/camaraproject/PredictiveConnectivityData/releases/latest -->
-Other releases of this repository are available [here](https://github.com/camaraproject/PredictiveConnectivityData/releases)
+* **NEW**: The latest public release is [r1.2](https://github.com/camaraproject/PredictiveConnectivityData/releases/tag/r1.2) (Fall25), with the following API versions:
+  * **predictive-connectivity-data v0.1.0**
+  [[YAML]](https://github.com/camaraproject/PredictiveConnectivityData/blob/r1.2/code/API_definitions/predictive-connectivity-data.yaml)
+  [[ReDoc]](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/camaraproject/PredictiveConnectivityData/r1.2/code/API_definitions/predictive-connectivity-data.yaml&nocors)
+  [[Swagger]](https://camaraproject.github.io/swagger-ui/?url=https://raw.githubusercontent.com/camaraproject/PredictiveConnectivityData/r1.2/code/API_definitions/predictive-connectivity-data.yaml)
+* The latest public release is always available here: https://github.com/camaraproject/PredictiveConnectivityData/releases/latest
+* Other releases of this repository are available in https://github.com/camaraproject/PredictiveConnectivityData/releases
+* For changes see [CHANGELOG.md](https://github.com/camaraproject/PredictiveConnectivityData/blob/main/CHANGELOG.md)
 
-For changes see [CHANGELOG.md](https://github.com/camaraproject/PredictiveConnectivityData/blob/main/CHANGELOG.md)
+_The above section is automatically synchronized by CAMARA project-administration._
+<!-- CAMARA:RELEASE-INFO:END -->
 
 ## Contributing
 
