@@ -34,7 +34,7 @@ dependencies:
 apis:
   - api_name: predictive-connectivity-data
     target_api_version: 0.2.0
-    target_api_status: alpha
+    target_api_status: public
     main_contacts:
       - eric-murray
       - albertoramosmonagas
