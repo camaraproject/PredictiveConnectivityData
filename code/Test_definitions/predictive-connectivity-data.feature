@@ -40,8 +40,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response header "x-correlator" has same value as the request header "x-correlator"
     And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
     And the response property "$.status" value is "SUPPORTED_AREA"
-    And the response property "$.timedConnectivityData[*].startTime" is equal to or later than request body property "$.startTime"
-    And the response property "$.timedConnectivityData[*].endTime" is equal to or earlier than request body property "$.endTime"
+    And the response property "$.timedConnectivityData" intervals fully cover the requested time range from "$.startTime" to "$.endTime"
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].geohash" is a valid Geohash inside the request area
     And all the items in response property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" are equal to "GC", "MC" or "NC"
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerSignalStrengths" is not included in the response
@@ -57,10 +56,9 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response header "x-correlator" has same value as the request header "x-correlator"
     And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
     And the response property "$.status" value is "PART_OF_AREA_NOT_SUPPORTED"
-    And the response property "$.timedConnectivityData[*].startTime" is equal to or later than request body property "$.startTime"
-    And the response property "$.timedConnectivityData[*].endTime" is equal to or earlier than request body property "$.endTime"
+    And the response property "$.timedConnectivityData" intervals fully cover the requested time range from "$.startTime" to "$.endTime"
     And there is at least one item in response property "$.timedConnectivityData[*].cellConnectivityData[*]"
-    And that item has an array property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" containing only "ND" values
+    And that item has the array property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" containing only "ND" values
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities" is not empty
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerSignalStrengths" is not included in the response
 
@@ -178,8 +176,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response header "x-correlator" has same value as the request header "x-correlator"
     And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
     And the response property "$.status" value is "SUPPORTED_AREA"
-    And the response property "$.timedConnectivityData[*].startTime" is equal to or later than request body property "$.startTime"
-    And the response property "$.timedConnectivityData[*].endTime" is equal to or earlier than request body property "$.endTime"
+    And the response property "$.timedConnectivityData" intervals fully cover the requested time range from "$.startTime" to "$.endTime"
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].geohash" is a valid Geohash inside the request area
     And all the items in response property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" are equal to "GC", "MC" or "NC"
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerSignalStrengths" is not included in the response
