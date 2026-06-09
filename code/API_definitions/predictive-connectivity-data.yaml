@@ -28,17 +28,22 @@ info:
 
     * **Notification URL and token**: Developers may provide a callback URL (`sink`) for receiving an async response.
     This is an optional parameter. If `sink` is included, it is RECOMMENDED for the client to provide as well the `sinkCredential`
-    property to protect the notification endpoint. In the current version,`sinkCredential.credentialType` MUST be set to `ACCESSTOKEN` if provided.
+    property to protect the notification endpoint. In the current version,`sinkCredential.credentialType` MUST be set to `ACCESSTOKEN` or `PRIVATE_KEY_JWT` if provided.
     When an asynchronous response is requested, the 202 response of the API will include an `operationId` property. This `operationId` property will
     also be sent in the callback notification. The purpose of the `operationId` is to correlate an asynchronous response with its corresponding request.
 
 
     # API Functionality
 
-    Once a developer specifies (1) the area as a polygon shape, (2) a precision level, (3) the service
+    Once a developer specifies (1) the area (either as a polygon shape or as a list of geohashes),
+    (2) a precision level (only when the area is a polygon), (3) the service
     level and (4) time interval in which they want to obtain the connectivity estimation,
     the API returns a data set consisting of a sequence of time ranges, with each
-    time range containing the input polygon subdivided into equal-sized grid cells.
+    time range containing the requested area subdivided into equal-sized grid cells.
+
+    When the area is provided as a list of geohashes (`areaType: GEOHASHLIST`), the response
+    contains one cell per requested geohash; each geohash determines the granularity of its own
+    response cell, and the `precision` request property MUST NOT be included.
 
     For each of the equal-sized cells of the grid, an analysis of Connectivity Levels
     is reported for each time slot within the range, this includes data classified into:
@@ -63,6 +68,21 @@ info:
       mobile connectivity services. Cells outside the area supported by the
       implementation will not be returned. Therefore, if a polygon is located
       entirely outside the supported area, an empty array will be returned.
+
+    When the area is specified as a list of geohashes (`areaType: GEOHASHLIST`):
+
+      - All MNOs must support the `POLYGON` area type; support for `GEOHASHLIST` is optional.
+      If the MNO does not support `GEOHASHLIST`, the API returns the error response
+      `PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_AREA_TYPE`.
+      - The requested geohashes do not need to be adjacent or contiguous; the API
+      returns one cell per requested geohash.
+      - Geohashes within the same request may have different precisions (string
+      lengths), as long as the MNO supports all of them. If any geohash uses a
+      precision not supported by the MNO, the API returns the error response
+      `PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION`.
+      - Geohashes within the list that fall outside the MNO coverage area are returned
+      with `layerConnectivities` containing all items set to `ND`. If the entire list
+      is outside the coverage area, the response will have `status` set to `AREA_NOT_SUPPORTED`.
 
     The standard behaviour of the API is synchronous, although for large
     area requests the API may behave asynchronously. An API invoker can enforce
@@ -125,7 +145,7 @@ info:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
   version: wip
-  x-camara-commonalities: 0.6
+  x-camara-commonalities: 0.8.0
 externalDocs:
   description: Product documentation at CAMARA.
   url: https://github.com/camaraproject/PredictiveConnectivityData
@@ -300,7 +320,9 @@ components:
   schemas:
     XCorrelator:
       type: string
+      description: Correlator string, UUID format recommended but any string matching the pattern can be used
       pattern: ^[a-zA-Z0-9-_:;.\/<>{}]{0,256}$
+      maxLength: 256
       example: "b4333c46-49c0-4f62-80d7-f0ef930f1c46"
     RetrieveConnectivityRequest:
       type: object
@@ -313,12 +335,14 @@ components:
         startTime:
           type: string
           format: date-time
+          maxLength: 64
           description: >-
             Start date time. It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6)
             and must have time zone.
         endTime:
           type: string
           format: date-time
+          maxLength: 64
           description: >-
             End date time. It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6)
             and must have time zone.
@@ -326,9 +350,12 @@ components:
           $ref: '#/components/schemas/NetworkType'
         precision:
           type: integer
+          format: int32
           description: >-
-            Precision required of response cells. Precision defines a geohash level and corresponds to the length of the geohash for each cell. More information at [Geohash system](https://en.wikipedia.org/wiki/Geohash)"
-            If not included the default precision level 7 is used by default. In case of using a not supported level by the MNO, the API returns the error response `PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION`.
+            Precision required of response cells. Precision defines a geohash level and corresponds to the length of the geohash for each cell. More information at [Geohash system](https://en.wikipedia.org/wiki/Geohash).
+            If not included the default precision level 7 is used by default.
+            Values within the schema range (1–12) that are not supported by the MNO return the error response `422 PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION`. Values outside the schema range are invalid per the OpenAPI definition and return `400 INVALID_ARGUMENT` via request validation.
+            This property MUST only be set when `area.areaType` is `POLYGON`. When `area.areaType` is `GEOHASHLIST`, each requested geohash determines the granularity of its own response cell; if `precision` is sent, the API returns a `400 INVALID_ARGUMENT` error.
           minimum: 1
           maximum: 12
           default: 7
@@ -338,6 +365,7 @@ components:
             If a prediction height is specified, the response will include only the connectivity data for the layer containing that height.
             If no prediction height is specified, the response will include available prediction for all heights.
           type: integer
+          format: int32
           minimum: 0
           maximum: 250
         includeSignalStrength:
@@ -352,6 +380,7 @@ components:
         sink:
           type: string
           format: uri
+          maxLength: 2048
           description: The address where the API response will be asynchronously delivered, using the HTTP protocol.
           pattern: ^https:\/\/.+$
           example: 'https://endpoint.example.com/sink'
@@ -376,13 +405,16 @@ components:
         propertyName: areaType
         mapping:
           POLYGON: "#/components/schemas/Polygon"
+          GEOHASHLIST: "#/components/schemas/GeohashList"
     AreaType:
       type: string
       description: |
         Type of this area.
         POLYGON - The area is defined as a polygon.
+        GEOHASHLIST - The area is defined as a list of geohashes.
       enum:
         - POLYGON
+        - GEOHASHLIST
     Polygon:
       description: Polygonal area. The Polygon should be a simple polygon, i.e. should not intersect itself.
       allOf:
@@ -426,6 +458,32 @@ components:
       format: double
       minimum: -180
       maximum: 180
+    GeohashList:
+      description: >-
+        Area defined as a list of geohashes. Geohashes do not need to be adjacent or contiguous and may have different precision levels (string lengths), as long as the MNO supports all of them. The `precision` request property MUST NOT be set when `areaType` is `GEOHASHLIST`; if set, the API returns a `400 INVALID_ARGUMENT` error.
+      allOf:
+        - $ref: "#/components/schemas/Area"
+        - type: object
+          required:
+            - geohashes
+          properties:
+            geohashes:
+              type: array
+              description: List of geohashes that define the area of interest.
+              minItems: 1
+              maxItems: 1000
+              items:
+                $ref: "#/components/schemas/Geohash"
+    Geohash:
+      type: string
+      description: >-
+        Geohash string identifying a cell using the [Geohash system](https://en.wikipedia.org/wiki/Geohash),
+        encoding a geographic location into a short string. Characters are taken from the
+        base-32 geohash alphabet (`0-9` and `b-z` excluding `a`, `i`, `l`, `o`).
+        The length of the string determines the cell granularity (precision).
+      pattern: ^[0-9bcdefghjkmnpqrstuvwxyz]{1,12}$
+      maxLength: 12
+      example: ezdmemd
     ServiceLevel:
       description: >-
         Describes the requested communication service level. Although more
@@ -434,6 +492,8 @@ components:
           - C2: Command and Control. Consists in connecting an unmanned aerial vehicle with its remote controller. This link allows data transmission in both directions, facilitating real-time operation and feedback.
           - STREAM_4K: Streaming in 4K quality.
           - BEST_EFFORT: This service level provides a qualitative estimation of coverage based on each operator's own prediction models or public coverage maps. It does not imply any guarantee of network performance or service availability. The values of GC, MC, NC, and ND should be interpreted as approximate indicators of expected connectivity quality, not as results derived from standardised thresholds.
+
+        An MNO may not support every service level listed in this enum. If the requested service level is not supported by the MNO, the API returns the error response `PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL`.
       type: string
       enum:
         - C2
@@ -450,81 +510,39 @@ components:
         - 4G
         - 5G
     SinkCredential:
+      description: A sink credential provides authentication or authorization information necessary to enable delivery of events to a target.
       type: object
       properties:
         credentialType:
           type: string
           enum:
-            - PLAIN
             - ACCESSTOKEN
-            - REFRESHTOKEN
+            - PRIVATE_KEY_JWT
           description: |
-            The type of the credential.
-            Note: Type of the credential - MUST be set to ACCESSTOKEN for now
+            The type of the credential - MUST be set to ACCESSTOKEN or PRIVATE_KEY_JWT for now
       discriminator:
         propertyName: credentialType
         mapping:
-          PLAIN: '#/components/schemas/PlainCredential'
           ACCESSTOKEN: '#/components/schemas/AccessTokenCredential'
-          REFRESHTOKEN: '#/components/schemas/RefreshTokenCredential'
+          PRIVATE_KEY_JWT: '#/components/schemas/PrivateKeyJWTCredential'
       required:
         - credentialType
-    PlainCredential:
-      type: object
-      description: A plain credential as a combination of an identifier and a secret.
-      allOf:
-        - $ref: '#/components/schemas/SinkCredential'
-        - type: object
-          required:
-            - identifier
-            - secret
-          properties:
-            identifier:
-              description: The identifier might be an account or username.
-              type: string
-            secret:
-              description: The secret might be a password or passphrase.
-              type: string
     AccessTokenCredential:
       type: object
-      description: An access token credential.
+      description: An access token credential. This type of credential is meant to be used by API Consumers that have limited capabilities to handle authorization requests.
       allOf:
         - $ref: '#/components/schemas/SinkCredential'
         - type: object
           properties:
             accessToken:
-              description: REQUIRED. An access token is a previously acquired token granting access to the target resource.
+              description: REQUIRED. An access token is a token granting access to the target resource.
               type: string
+              maxLength: 4096
+              writeOnly: true
             accessTokenExpiresUtc:
               type: string
               format: date-time
-              description: |
-                REQUIRED. An absolute (UTC) timestamp at which the token shall be considered expired.
-                If the access token is a JWT and registered "exp" (Expiration Time) claim is present, the two expiry times should match.
-                It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6) and must have time zone.
-              example: "2023-07-03T12:27:08.312Z"
-            accessTokenType:
-              description: REQUIRED. Type of the access token (See [OAuth 2.0](https://tools.ietf.org/html/rfc6749#section-7.1)). For the current version of the API the type MUST be set to `Bearer`.
-              type: string
-              enum:
-                - bearer
-          required:
-            - accessToken
-            - accessTokenExpiresUtc
-            - accessTokenType
-    RefreshTokenCredential:
-      type: object
-      description: An access token credential with a refresh token.
-      allOf:
-        - $ref: '#/components/schemas/SinkCredential'
-        - type: object
-          properties:
-            accessToken:
-              description: REQUIRED. An access token is a previously acquired token granting access to the target resource.
-              type: string
-            accessTokenExpiresUtc:
-              type: string
-              format: date-time
+              maxLength: 64
               description: |
                 REQUIRED. An absolute (UTC) timestamp at which the token shall be considered expired.
                 If the access token is a JWT and registered "exp" (Expiration Time) claim is present, the two expiry times should match.
@@ -533,21 +551,39 @@ components:
             accessTokenType:
               description: REQUIRED. Type of the access token (See [OAuth 2.0](https://tools.ietf.org/html/rfc6749#section-7.1)).
               type: string
+              writeOnly: true
               enum:
                 - bearer
-            refreshToken:
-              description: REQUIRED. An refresh token credential used to acquire access tokens.
+          required:
+            - accessToken
+            - accessTokenExpiresUtc
+            - accessTokenType
+    PrivateKeyJWTCredential:
+      type: object
+      description: Use PRIVATE_KEY_JWT to get an access token. This type of credential is to be used by clients that have an authorization server.
+      allOf:
+        - $ref: '#/components/schemas/SinkCredential'
+        - type: object
+          properties:
+            clientId:
+              description: The client ID used to authenticate when requesting an access token using PRIVATE_KEY_JWT.
               type: string
-            refreshTokenEndpoint:
+              maxLength: 128
+              writeOnly: true
+            tokenUri:
+              description: The URI where to request an access token using PRIVATE_KEY_JWT.
               type: string
               format: uri
-              description: REQUIRED. A URL at which the refresh token can be traded for an access token.
-      required:
-        - accessToken
-        - accessTokenExpiresUtc
-        - accessTokenType
-        - refreshToken
-        - refreshTokenEndpoint
+              maxLength: 2048
+              pattern: ^https:\/\/.+$
+              writeOnly: true
+            jwksUri:
+              description: The URI used to request the public key to verify that the JWT assertion was signed by PRIVATE_KEY_JWT.
+              type: string
+              format: uri
+              maxLength: 2048
+              pattern: ^https:\/\/.+$
+              readOnly: true
     ConnectivityDataResponse:
       type: object
       description: >-
@@ -567,14 +603,19 @@ components:
              to 2024-01-03T12:00:00Z and interval from 2024-01-03T12:00:00Z to 2024-01-03T13:00:00Z).
           items:
             $ref: '#/components/schemas/TimedConnectivityData'
+          maxItems: 168
         status:
           $ref: '#/components/schemas/ResponseStatus'
         statusInfo:
           type: string
+          maxLength: 512
           description: Information about the status, mandatory when property `status` is `OPERATION_NOT_COMPLETED` for adding extra information about the error.
           example: Some error happened during the processing of the request
         requestedHeight:
           type: integer
+          format: int32
+          minimum: 0
+          maximum: 250
           description: The height in metres above ground level that was requested in the request. This property is only present if a specific height was requested.
           nullable: true
           example: 50
@@ -600,6 +641,7 @@ components:
             - operationId
     OperationId:
       type: string
+      maxLength: 256
       description: The unique identifier of the asynchronous operation that is returned when the operation is initiated.
       example: 2322f362-eaab-4cf3-86d2-efcbdf3a7cb4
     ResponseStatus:
@@ -632,6 +674,7 @@ components:
         startTime:
           type: string
           format: date-time
+          maxLength: 64
           description: >-
             Interval start time. It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6)
             and must have time zone.
@@ -639,6 +682,7 @@ components:
         endTime:
           type: string
           format: date-time
+          maxLength: 64
           description: >-
             Interval end time. It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6)
             and must have time zone.
@@ -656,19 +700,14 @@ components:
       items:
         $ref: '#/components/schemas/CellConnectivityData'
       minItems: 1
+      maxItems: 10000
     CellConnectivityData:
       description: >-
         Represents a rectangular grid cell within the specified area, including
         its connectivity data.
       properties:
         geohash:
-          type: string
-          description: >-
-            Coordinates of the cell represented as a string using the [Geohash
-            system](https://en.wikipedia.org/wiki/Geohash), encoding a
-            geographic location into a short string. The value length,
-            and thus, the cell granularity, is determined by the request body property `precision`.
-          example: ezdmemd
+          $ref: '#/components/schemas/Geohash'
         layerConnectivities:
           $ref: '#/components/schemas/LayerConnectivities'
         layerSignalStrengths:
@@ -679,6 +718,7 @@ components:
     LayerConnectivities:
       type: array
       minItems: 1
+      maxItems: 100
       description: >-
         Sequence of connectivity quality values in each of the layers in which
         the vertical space over the area determined by the `geohash` is
@@ -702,6 +742,7 @@ components:
     LayerSignalStrengths:
       type: array
       minItems: 1
+      maxItems: 100
       description: >-
         Predicted signal strength values in dBm for each layer. This array is optional
         and will only be present if the `includeSignalStrength` parameter was set to true
@@ -727,6 +768,7 @@ components:
         - ND
     ErrorInfo:
       type: object
+      description: A structured error response providing details about a failed request, including the HTTP status code, an error code, and a human-readable message
       required:
         - status
         - code
@@ -734,12 +776,17 @@ components:
       properties:
         status:
           type: integer
+          format: int32
+          minimum: 100
+          maximum: 599
           description: HTTP response status code
         code:
           type: string
+          maxLength: 96
           description: A human-readable code to describe the error
         message:
           type: string
+          maxLength: 512
           description: A human-readable description of what the event represents
   responses:
     RetrieveConnectivityBadRequest400:
@@ -839,6 +886,8 @@ components:
           - Indicated request is too big for both synchronous and asynchronous processing ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST", "message": "The indicated request is too big for both synchronous and asynchronous processing")
           - Indicated cell precision (Geohash level) is not supported ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION", "message": "Indicated cell precision (Geohash level) is not supported")
           - Indicated request is too big for synchronous processing and asynchronous processing is not enabled ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SYNC_RESPONSE", "message": "The indicated request is too big for synchronous processing and asynchronous processing is not enabled")
+          - The requested `areaType` is not supported by the MNO ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_AREA_TYPE", "message": "The requested areaType is not supported by the MNO")
+          - Indicated service level is not supported ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL", "message": "The service level provided is not supported")
       headers:
         x-correlator:
           $ref: '#/components/headers/x-correlator'
@@ -857,6 +906,8 @@ components:
                       - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST
                       - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION
                       - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SYNC_RESPONSE
+                      - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_AREA_TYPE
+                      - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL
           examples:
             PREDICTIVE_CONNECTIVITY_DATA_422_UNSUPPORTED_REQUEST:
               value:
@@ -878,6 +929,16 @@ components:
                 message: >-
                   Indicated combination of area, time interval and precision is too big for synchronous processing
                   and asynchronous processing is not enabled
+            PREDICTIVE_CONNECTIVITY_DATA_422_UNSUPPORTED_AREA_TYPE:
+              value:
+                status: 422
+                code: PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_AREA_TYPE
+                message: The requested areaType is not supported by the MNO
+            PREDICTIVE_CONNECTIVITY_DATA_422_UNSUPPORTED_SERVICE_LEVEL:
+              value:
+                status: 422
+                code: PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL
+                message: The service level provided is not supported
     Generic400:
       description: Problem with the client request
       headers:
