@@ -702,6 +702,7 @@ components:
       minItems: 1
       maxItems: 10000
     CellConnectivityData:
+      type: object
       description: >-
         Represents a rectangular grid cell within the specified area, including
         its connectivity data.
