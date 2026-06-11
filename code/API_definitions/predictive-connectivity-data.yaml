@@ -629,6 +629,12 @@ components:
         example: -85.5
     Connectivity:
       type: string
+      description: |
+        Defined connectivity levels
+        - `GC`: Means good connectivity. Service level met even in unfavorable conditions.
+        - `MC`: Means marginal connectivity. Service level might not be met.
+        - `NC`: Means no connectivity. Service level not met.
+        - `ND`: No connectivity data.
       enum:
         - GC
         - MC
