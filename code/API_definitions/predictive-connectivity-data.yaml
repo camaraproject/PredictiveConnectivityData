@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Predictive Connectivity Data
-  description: >-
+  description: |
     # Introduction
 
     With the Dynamic Predictive Connectivity Data API, the consumer can retrieve an estimation of connectivity delivered by 4/5G networks along a volume/area for a future date, time and height.
