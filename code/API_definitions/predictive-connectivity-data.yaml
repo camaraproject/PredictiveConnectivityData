@@ -397,7 +397,7 @@ components:
             - boundary
           properties:
             boundary:
-              $ref: "../common/CAMARA_event_common.yaml#/components/schemas/PointList"
+              $ref: "../common/CAMARA_common.yaml#/components/schemas/PointList"
     GeohashList:
       description: >-
         Area defined as a list of geohashes. Geohashes do not need to be adjacent or contiguous and may have different precision levels (string lengths), as long as the MNO supports all of them. The `precision` request property MUST NOT be set when `areaType` is `GEOHASHLIST`; if set, the API returns a `400 INVALID_ARGUMENT` error.
