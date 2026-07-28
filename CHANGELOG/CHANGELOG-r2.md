@@ -36,17 +36,14 @@ The API definition(s) are based on
 
 ## What's Changed
 * Chore: Reset version numbers to wip following Fall'25 Meta-Release by @eric-murray in https://github.com/camaraproject/PredictiveConnectivityData/pull/40
-* Add "Best Effort" Service Level by @eric-murray in https://github.com/camaraproject/PredictiveConnectivityData/pull/27
 * [bulk] Sync Release Information section (2025-12-12-001) by @hdamker-bot in https://github.com/camaraproject/PredictiveConnectivityData/pull/42
 * Update README.md according to new meeting cadence by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/41
 * Update User Story for Predictive Connectivity Data by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/43
 * [bulk] Add release-plan.yaml (2026-02-23-001) by @hdamker-bot in https://github.com/camaraproject/PredictiveConnectivityData/pull/44
-* Fix incorrect ATP time-range assertions by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/46
 * [bulk] Enable release automation and validation by @camara-release-automation[bot] in https://github.com/camaraproject/PredictiveConnectivityData/pull/48
 * Update Release Plan according to Sync26 by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/47
 * Add Sync26 new changes (Geohashlist+Commonalities & ICM) by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/50
 * Sync branch sync-common/r4,3 to main by @eric-murray in https://github.com/camaraproject/PredictiveConnectivityData/pull/57
-* Add type definition for CellConnectivityData by @eric-murray in https://github.com/camaraproject/PredictiveConnectivityData/pull/58
 * Sync branch with main by @eric-murray in https://github.com/camaraproject/PredictiveConnectivityData/pull/59
 * Sync common files from Commonalities r4.3 by @camara-release-automation[bot] in https://github.com/camaraproject/PredictiveConnectivityData/pull/55
 * Remove API-Readiness-Checklist.md by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/62
@@ -76,7 +73,8 @@ Changes documented below are compared to version 0.1.0.
 
 ### Added
 
-* N/A
+* Add "Best Effort" Service Level by @eric-murray in https://github.com/camaraproject/PredictiveConnectivityData/pull/27
+* Add type definition for CellConnectivityData by @eric-murray in https://github.com/camaraproject/PredictiveConnectivityData/pull/58
 
 ### Changed
 
@@ -84,7 +82,7 @@ Changes documented below are compared to version 0.1.0.
 
 ### Fixed
 
-* N/A
+* Fix incorrect ATP time-range assertions by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/46
 
 ### Removed
 
