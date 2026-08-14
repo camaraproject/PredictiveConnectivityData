@@ -130,7 +130,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
 
   @predictive_connectivity_data_07_async_success_scenario
   Scenario: Validate success async response for a request when sink is provided
-    # Property "$.sink" is set with a valid public accessible HTTPs endpoint
+    # Property "$.sink" is set with a valid publicly accessible HTTPS endpoint
     Given the request body property "$.area" is set to a valid testing area within supported regions
     And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
     And the request body property "$.serviceLevel" is set to a valid communication service level
@@ -147,7 +147,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
 
   @predictive_connectivity_data_08_async_operation_not_completed_scenario
   Scenario: Validate async callback when operation fails
-    # Property "$.sink" is set with a valid public accessible HTTPs endpoint
+    # Property "$.sink" is set with a valid publicly accessible HTTPS endpoint
     Given the request body property "$.area" is set to a valid testing area within supported regions
     And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
     And the request body property "$.serviceLevel" is set to a valid communication service level
@@ -158,7 +158,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
     And the response includes property "$.operationId"
-    And there have been some problem processing the request asynchronously
+    And there has been a problem processing the request asynchronously
     And the request with the response body will be received at the address of the request property "$.sink" with property "$.operationId" equal to response property "$.operationId"
     And the request will have header "Authorization" set to "Bearer " + the value of the request property "$.sinkCredential.accessToken"
     And the request body complies with the OAS schema at "/components/schemas/ConnectivityDataAsyncResponse"
@@ -272,7 +272,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
       | $.endTime     |
 
   @predictive_connectivity_data_400.03_invalid_service_level
-  Scenario: Error 400 when serviceLevel has not a valid value
+  Scenario: Error 400 when serviceLevel does not have a valid value
     Given the request body property "$.serviceLevel" is not set to "C2", "STREAM_4K" or "BEST_EFFORT"
     When the request "retrieveConnectivity" is sent
     Then the response status code is 400
@@ -293,7 +293,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response property "$.message" contains a user friendly text
 
   @predictive_connectivity_data_400.05_invalid_network_type
-  Scenario: Error 400 when networkType has not a valid value
+  Scenario: Error 400 when networkType does not have a valid value
     Given the request body property "$.networkType" is not set to a "4G" or "5G"
     When the request "retrieveConnectivity" is sent
     Then the response status code is 400
@@ -346,7 +346,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
 
   @predictive_connectivity_data_400.09_invalid_url
   Scenario: Invalid sink
-    Given the request body property "$.sink" is not set to an url
+    Given the request body property "$.sink" is not set to a URL
     When the request "retrieveConnectivity" is sent
     Then the response status code is 400
     And the response header "x-correlator" has same value as the request header "x-correlator"
