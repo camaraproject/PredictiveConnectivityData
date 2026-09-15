@@ -8,6 +8,8 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
   # * Network connectivity types allowed
   # * Max and min height allowed
   # * Include the signal strength allowed
+  # * Whether `PRIVATE_KEY_JWT` is accepted as `sinkCredential.credentialType`
+  # * Whether asynchronous processing is supported (it determines whether scenarios 07, 08 and 14 or scenario 422.08 apply)
   # * Max size of the response(Combination of area, startTime, endTime, service level and precision requested) supported for a sync response
   # * Max size of the response(Combination of area, startTime, endTime, service level and precision requested) supported for an async response
   # * Limitations about max complexity of requested area allowed
@@ -15,6 +17,8 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
   # Testing assets:
   # * An Area within the supported region
   # * An Area partially within the supported region
+  # * An API consumer with a JWK Set pre-configured for `PRIVATE_KEY_JWT` authentication
+  # * An API consumer with no JWK Set configured for `PRIVATE_KEY_JWT` authentication
   # * An Area outside the supported region
   #
   # References to OAS spec schemas refer to schemas specified in predictive-connectivity-data.yaml
@@ -233,6 +237,28 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].geohash" is a valid Geohash inside the request area
     And all the items in response property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" are equal to "GC", "MC" or "NC"
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerSignalStrengths" is not included in the response
+
+  # The JWT authentication parameters have to be pre-configured out-of-band between the API consumer and the
+  # API provider, as no response of this API returns "$.sinkCredential" and therefore the provider's "jwksUri"
+  # is never conveyed in-band
+  @predictive_connectivity_data_14_async_private_key_jwt_success_scenario
+  Scenario: Validate success async response for a request when sinkCredential uses PRIVATE_KEY_JWT
+    # Property "$.sink" is set with a valid publicly accessible HTTPS endpoint
+    Given the API provider has a JWK Set pre-configured for the API consumer used in the test
+    And the request body property "$.area" is set to a valid testing area within supported regions
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
+    And the request body property "$.serviceLevel" is set to a valid communication service level
+    And the request body property "$.sink" is set to a valid HTTPS URL
+    And the request body property "$.sinkCredential" is set to a valid credential with property "$.sinkCredential.credentialType" set to "PRIVATE_KEY_JWT"
+    When the request "retrieveConnectivity" is sent
+    Then the response status code is 202
+    And the response header "Content-Type" is "application/json"
+    And the response header "x-correlator" has same value as the request header "x-correlator"
+    And the response includes property "$.operationId"
+    And the response does not include property "$.sinkCredential"
+    And the request with the response body will be received at the address of the request property "$.sink" with property "$.operationId" equal to response property "$.operationId"
+    And the request will have header "Authorization" set to "Bearer " + an access token requested to the request property "$.sinkCredential.tokenUri" with the request property "$.sinkCredential.clientId"
+    And the request body complies with the OAS schema at "/components/schemas/ConnectivityDataAsyncResponse"
 
   # Error scenarios
 
@@ -590,7 +616,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response property "$.message" contains a user friendly text
 
   @predictive_connectivity_data_422.03_too_big_request
-  #To test this scenario provided values for "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" MUST generate a too big response in both sync and async scenarios
+  #To test this scenario provided values for "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" MUST generate a too big response in both sync and async scenarios. Unlike 422.08, this error is caused by the size of the request and applies even when the implementation does support asynchronous processing
   Scenario: Error 422 when the response is too big for a sync and async response
     Given the request body properties "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" are set to valid values
     When the request "retrieveConnectivity" is sent
@@ -636,6 +662,35 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response property "$.status" is 422
     And the response property "$.code" is "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL"
     And the response property "$.message" contains a user friendly text
+
+  @predictive_connectivity_data_422.07_private_key_jwt_not_configured
+  #To test this scenario the API consumer must not have a JWK Set pre-configured for PRIVATE_KEY_JWT authentication
+  Scenario: Error 422 when PRIVATE_KEY_JWT is requested and no JWK Set is configured for the API consumer
+    Given the API provider has no JWK Set configured for the API consumer used in the test
+    And the request body property "$.sink" is set to a valid HTTPS URL
+    And the request body property "$.sinkCredential" is set to a valid credential with property "$.sinkCredential.credentialType" set to "PRIVATE_KEY_JWT"
+    When the request "retrieveConnectivity" is sent
+    Then the response status code is 422
+    And the response header "Content-Type" is "application/json"
+    And the response property "$.status" is 422
+    And the response property "$.code" is "PRIVATE_KEY_JWT_NOT_CONFIGURED"
+    And the response property "$.message" contains a user friendly text
+
+  @predictive_connectivity_data_422.08_unsupported_async_response
+  #To test this scenario the implementation must not support asynchronous processing. The request MUST be small enough to be served synchronously, so that the error is caused by the lack of asynchronous support and not by the size of the request
+  Scenario: Error 422 when sink is provided but the implementation does not support asynchronous processing
+    Given the request body property "$.area" is set to a valid testing area within supported regions
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
+    And the request body property "$.serviceLevel" is set to a valid communication service level
+    And the request body properties "$.area", "$.precision", "$.startTime" and "$.endTime" are set to values small enough to be processed synchronously
+    And the request body property "$.sink" is set to a valid HTTPS URL
+    When the request "retrieveConnectivity" is sent
+    Then the response status code is 422
+    And the response header "Content-Type" is "application/json"
+    And the response property "$.status" is 422
+    And the response property "$.code" is "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_ASYNC_RESPONSE"
+    And the response property "$.message" contains a user friendly text
+    And no request is received at the address of the request property "$.sink"
 
   # Error 429 scenarios
 
