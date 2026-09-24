@@ -128,7 +128,7 @@ info:
     as an error cannot be returned in the callback. The callback will also
     include the statusInfo property to add extra information about the error.
 
-    NOTE: In case the property "Technology" is not included, the quality of connectivity
+    NOTE: In case the property "networkType" is not included, the quality of connectivity
     will be returned considering both 4G and 5G networks.
 
     # Resources and Operations overview
@@ -527,13 +527,14 @@ components:
             - operationId
     OperationId:
       type: string
+      pattern: ^[a-zA-Z0-9-_:;.\/<>{}]{1,256}$
       maxLength: 256
       description: The unique identifier of the asynchronous operation that is returned when the operation is initiated.
       example: 2322f362-eaab-4cf3-86d2-efcbdf3a7cb4
     ResponseStatus:
       type: string
       description: >-
-        Represents the state of the response for the input polygon defined in the request, the possible values are:
+        Represents the state of the response for the input area defined in the request, the possible values are:
           - `SUPPORTED_AREA`: The whole request area is supported. Connectivity data for the entire requested area is returned.
           - `PART_OF_AREA_NOT_SUPPORTED`: Part of the requested area is outside the MNOs coverage area, the cells outside the coverage
           area will have property `layerConnectivities` with all items in the array with value `ND`.
@@ -657,7 +658,7 @@ components:
     RetrieveConnectivityBadRequest400:
       description: >-
         Problem with the client request. In addition to regular scenario of
-        `INVALID_ARGUMENT`, `INVALID_CREDENTIAL`, `INVALID_TOKEN`, another scenarios may exist:
+        `INVALID_ARGUMENT`, `INVALID_CREDENTIAL`, `INVALID_TOKEN`, `INVALID_SINK`, another scenarios may exist:
           - The area is not a polygon shape or has an arbitrary complexity ("code": "PREDICTIVE_CONNECTIVITY_DATA.INVALID_AREA", "message": "The area is not a polygon shape or has an arbitrary complexity")
           - Indicated `startTime` is greater than the maximum allowed ("code": "PREDICTIVE_CONNECTIVITY_DATA.MAX_STARTTIME_EXCEEDED", "message": "Indicated startTime is greater than the maximum allowed")
           - Indicated `startTime` is earlier than the minimum allowed ("code": "PREDICTIVE_CONNECTIVITY_DATA.MIN_STARTTIME_EXCEEDED", "message": "Indicated startTime is earlier than the minimum allowed")
@@ -733,11 +734,10 @@ components:
                   Indicated time period is partially in the past and partially in the future
     RetrieveConnectivityUnprocessableContent422:
       description: >-
-        Problem with the client request. In addition to regular scenario of
-        `INVALID_ARGUMENT`, another scenarios may exist:
-          - Indicated request is too big for both synchronous and asynchronous processing, so providing `sink` does not help ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST", "message": "The indicated request is too big for both synchronous and asynchronous processing")
+        Problem with the client request. The following scenarios may exist:
+          - Indicated request is too big for both synchronous and asynchronous processing, so providing `sink` does not help ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST", "message": "Indicated combination of area, time interval and precision is too big for both synchronous and asynchronous processing")
           - Indicated cell precision (Geohash level) is not supported ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION", "message": "Indicated cell precision (Geohash level) is not supported")
-          - Indicated request is too big for synchronous processing and asynchronous processing is not enabled ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SYNC_RESPONSE", "message": "The indicated request is too big for synchronous processing and asynchronous processing is not enabled")
+          - Indicated request is too big for synchronous processing and asynchronous processing is not enabled ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SYNC_RESPONSE", "message": "Indicated combination of area, time interval and precision is too big for synchronous processing and asynchronous processing is not enabled")
           - The requested `areaType` is not supported by the MNO ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_AREA_TYPE", "message": "The requested areaType is not supported by the MNO")
           - Indicated service level is not supported ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL", "message": "The service level provided is not supported")
           - `sinkCredential.credentialType` is set to `PRIVATE_KEY_JWT` but no JWK Set is configured for the API consumer ("code": "PRIVATE_KEY_JWT_NOT_CONFIGURED", "message": "No JWK Set configured for PRIVATE_KEY_JWT authentication.")
@@ -780,7 +780,7 @@ components:
                 status: 422
                 code: PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION
                 message: >-
-                  Indicated cell precision (Geohash length) is not supported
+                  Indicated cell precision (Geohash level) is not supported
             PREDICTIVE_CONNECTIVITY_DATA_422_UNSUPPORTED_SYNC_RESPONSE:
               value:
                 status: 422
@@ -838,8 +838,8 @@ components:
                   - NC
                   - NC
                   - NC
-          - startTime: "2024-01-03T11:00:00Z"
-            endTime: "2024-01-03T12:00:00Z"
+          - startTime: "2024-01-03T12:00:00Z"
+            endTime: "2024-01-03T13:00:00Z"
             cellConnectivityData:
               - geohash: ezdmemd
                 layerConnectivities:
@@ -872,14 +872,14 @@ components:
             cellConnectivityData:
               - geohash: ezdmemd
                 layerConnectivities:
-                  - NC
-                  - NC
-                  - NC
-                  - NC
-                  - NC
-                  - NC
-                  - NC
-                  - NC
+                  - ND
+                  - ND
+                  - ND
+                  - ND
+                  - ND
+                  - ND
+                  - ND
+                  - ND
               - geohash: ezdmemc
                 layerConnectivities:
                   - GC
@@ -890,19 +890,19 @@ components:
                   - NC
                   - NC
                   - NC
-          - startTime: "2024-01-03T13:00:00Z"
-            endTime: "2024-01-03T14:00:00Z"
+          - startTime: "2024-01-03T12:00:00Z"
+            endTime: "2024-01-03T13:00:00Z"
             cellConnectivityData:
               - geohash: ezdmemd
                 layerConnectivities:
-                  - NC
-                  - NC
-                  - NC
-                  - NC
-                  - NC
-                  - NC
-                  - NC
-                  - NC
+                  - ND
+                  - ND
+                  - ND
+                  - ND
+                  - ND
+                  - ND
+                  - ND
+                  - ND
               - geohash: ezdmemc
                 layerConnectivities:
                   - GC
