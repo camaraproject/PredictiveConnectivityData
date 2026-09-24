@@ -171,7 +171,7 @@ info:
   version: wip
   x-camara-commonalities: 0.9.0
 externalDocs:
-  description: Product documentation at CAMARA.
+  description: Product documentation at CAMARA
   url: https://github.com/camaraproject/PredictiveConnectivityData
 servers:
   - url: "{apiRoot}/predictive-connectivity-data/vwip"
@@ -559,15 +559,15 @@ components:
         and interval from 2024-01-03T12:00:00Z to 2024-01-03T13:00:00Z).
       properties:
         startTime:
+          description: Interval start time.
           allOf:
             - $ref: "../common/CAMARA_common.yaml#/components/schemas/DateTime"
-            - description: Interval start time.
-              example: "2023-07-03T10:00:00Z"
+          example: "2023-07-03T10:00:00Z"
         endTime:
+          description: Interval end time.
           allOf:
             - $ref: "../common/CAMARA_common.yaml#/components/schemas/DateTime"
-            - description: Interval end time.
-              example: "2023-07-03T11:00:00Z"
+          example: "2023-07-03T11:00:00Z"
         cellConnectivityData:
           $ref: '#/components/schemas/CellConnectivityDataArray'
       required:

@@ -604,27 +604,22 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response property "$.code" is "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION"
     And the response property "$.message" contains a user friendly text
 
-  @predictive_connectivity_data_422.02_too_big_synchronous_response
-  #To test this scenario provided values for "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" MUST generate a response too big for a synchronous response
-  Scenario: Error 422 when the response is too big for a sync response
+  @predictive_connectivity_data_422.02_too_big_synchronous_response @predictive_connectivity_data_422.03_too_big_request
+  #To test 422.02 (sync only), provided values MUST generate a response too big for synchronous but processable asynchronously
+  #To test 422.03 (sync and async), provided values MUST generate a too big response in both sync and async scenarios. Unlike 422.08, this error is caused by the size of the request and applies even when the implementation does support asynchronous processing
+  Scenario Outline: Error 422 when the response is too big for <scenario>
     Given the request body properties "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" are set to valid values
     When the request "retrieveConnectivity" is sent
     Then the response status code is 422
     And the response header "Content-Type" is "application/json"
     And the response property "$.status" is 422
-    And the response property "$.code" is "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SYNC_RESPONSE"
+    And the response property "$.code" is "<error_code>"
     And the response property "$.message" contains a user friendly text
 
-  @predictive_connectivity_data_422.03_too_big_request
-  #To test this scenario provided values for "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" MUST generate a too big response in both sync and async scenarios. Unlike 422.08, this error is caused by the size of the request and applies even when the implementation does support asynchronous processing
-  Scenario: Error 422 when the response is too big for a sync and async response
-    Given the request body properties "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" are set to valid values
-    When the request "retrieveConnectivity" is sent
-    Then the response status code is 422
-    And the response header "Content-Type" is "application/json"
-    And the response property "$.status" is 422
-    And the response property "$.code" is "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST"
-    And the response property "$.message" contains a user friendly text
+    Examples:
+      | scenario               | error_code                                             |
+      | a sync response        | PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SYNC_RESPONSE |
+      | a sync and async response | PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST    |
 
   @predictive_connectivity_data_422.04_unsupported_area_type
   #To test this scenario the implementation must not support the GEOHASHLIST area type
