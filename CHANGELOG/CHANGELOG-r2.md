@@ -63,15 +63,15 @@ Changes documented below are compared to version 0.2.0-rc.1.
 
 ### Added
 
-* N/A
+* Add test coverage for PRIVATE_KEY_JWT sink credential and 422 PRIVATE_KEY_JWT_NOT_CONFIGURED by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/76
 
 ### Changed
 
-* N/A
+* Align Predictive Connectivity Data with Commonalities 0.9.0 (r4.4) by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/78
 
 ### Fixed
 
-* N/A
+* Fix Release r2.1 issues by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/74
 
 ### Removed
 
