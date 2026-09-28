@@ -428,13 +428,35 @@ components:
       maximum: 180
     ServiceLevel:
       description: >-
-        Describes the requested communication service level. Although more
-        categories may be added in the future, for the time being, the possible
-        service levels are as follows:
-          - C2: Command and Control. Consists in connecting an unmanned aerial vehicle with its remote controller. This link allows data transmission in both directions, facilitating real-time operation and feedback.
+        Describes the requested communication service level. 
+        Service levels represent predefined communication requirement
+        categories used by the API provider's prediction model to classify
+        expected connectivity. Unless explicitly stated otherwise, the detailed
+        technical criteria associated with each service level are
+        provider-defined and implementation-specific. Service levels do not
+        represent standardised QoS profiles, network performance guarantees,
+        service availability commitments, or operational safety approvals.
+        Although more categories may be added in the future, for the time
+        being, the possible service levels are as follows:
+          - C2: Command and Control. Consists in connecting an unmanned aerial
+            vehicle with its remote controller. This link allows data
+            transmission in both directions, facilitating real-time operation
+            and feedback. 
           - STREAM_4K: Streaming in 4K quality.
-          - TELE_OPERATION: Intended for vehicle tele-operation in the automotive sector. Combination of low-latency actuation and low-latency, high-throughput sensor feedback (e.g. camera feeds).
-          - BEST_EFFORT: This service level provides a qualitative estimation of coverage based on each operator's own prediction models or public coverage maps. It does not imply any guarantee of network performance or service availability. The values of GC, MC, NC, and ND should be interpreted as approximate indicators of expected connectivity quality, not as results derived from standardised thresholds.
+          - TELE_OPERATION: Implementation-specific service level intended for
+            remote operation of vehicles, robots or machines requiring
+            bidirectional low-latency control and high-throughput sensor or
+            video feedback. The connectivity values indicate whether the
+            provider's prediction model expects the requested area, time,
+            height and network type to satisfy the criteria associated with
+            this service level. 
+          - BEST_EFFORT: This service level provides a qualitative estimation
+            of coverage based on each operator's own prediction models or
+            public coverage maps. It does not imply any guarantee of network
+            performance or service availability. The values of GC, MC, NC, and
+            ND should be interpreted as approximate indicators of expected
+            connectivity quality, not as results derived from standardised
+            thresholds.
       type: string
       enum:
         - C2
@@ -841,6 +863,7 @@ components:
           - Indicated request is too big for both synchronous and asynchronous processing ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST", "message": "The indicated request is too big for both synchronous and asynchronous processing")
           - Indicated cell precision (Geohash level) is not supported ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION", "message": "Indicated cell precision (Geohash level) is not supported")
           - Indicated request is too big for synchronous processing and asynchronous processing is not enabled ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SYNC_RESPONSE", "message": "The indicated request is too big for synchronous processing and asynchronous processing is not enabled")
+          - Indicated request contains a service level that is not supported by the provider ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL", "message": "The indicated request contains a service level that is not supported by the provider")
       headers:
         x-correlator:
           $ref: '#/components/headers/x-correlator'
@@ -859,6 +882,7 @@ components:
                       - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST
                       - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION
                       - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SYNC_RESPONSE
+                      - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL
           examples:
             PREDICTIVE_CONNECTIVITY_DATA_422_UNSUPPORTED_REQUEST:
               value:

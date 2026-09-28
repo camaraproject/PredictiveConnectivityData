@@ -448,6 +448,15 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response property "$.code" is "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST"
     And the response property "$.message" contains a user friendly text
 
+  @predictive_connectivity_data_422.04_unsupported_service_level
+  Scenario: Error 422 when the requested service level is not supported by this provider
+    Given the request body property "$.serviceLevel" is set to a valid but not supported value
+    Then the response status code is 422
+    And the response header "Content-Type" is "application/json"
+    And the response property "$.status" is 422
+    And the response property "$.code" is "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL"
+    And the response property "$.message" contains a user friendly text
+
     # Error 429 scenarios
 
   @predictive_connectivity_data_429.01_too_Many_Requests
