@@ -432,7 +432,7 @@ components:
       example: ezdmemd
     ServiceLevel:
       description: >-
-        Describes the requested communication service level. 
+        Describes the requested communication service level.
         Service levels represent predefined communication requirement
         categories used by the API provider's prediction model to classify
         expected connectivity. Unless explicitly stated otherwise, the detailed
@@ -445,7 +445,7 @@ components:
           - C2: Command and Control. Consists in connecting an unmanned aerial
             vehicle with its remote controller. This link allows data
             transmission in both directions, facilitating real-time operation
-            and feedback. 
+            and feedback.
           - STREAM_4K: Streaming in 4K quality.
           - TELE_OPERATION: Implementation-specific service level intended for
             remote operation of vehicles, robots or machines requiring
@@ -453,7 +453,7 @@ components:
             video feedback. The connectivity values indicate whether the
             provider's prediction model expects the requested area, time,
             height and network type to satisfy the criteria associated with
-            this service level. 
+            this service level.
           - BEST_EFFORT: This service level provides a qualitative estimation
             of coverage based on each operator's own prediction models or
             public coverage maps. It does not imply any guarantee of network
@@ -789,8 +789,8 @@ components:
                       - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST
                       - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION
                       - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SYNC_RESPONSE
-                      - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL
                       - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_AREA_TYPE
+                      - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL
                       - PRIVATE_KEY_JWT_NOT_CONFIGURED
           examples:
             PREDICTIVE_CONNECTIVITY_DATA_422_UNSUPPORTED_REQUEST:
