@@ -104,21 +104,31 @@ info:
 
     ## Error handling:
 
-    For requests with a combination of area, precision, startTime and endTime
-    properties involving an amount of processing that cannot be processed
-    synchronously, the API returns the error response
-    PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SYNC_RESPONSE.
+    Three different `422` error responses distinguish why a request cannot be served. They are
+    mutually exclusive and are evaluated in this order:
 
-    For requests with a combination of area, precision, startTime and endTime
-    properties too big for both synchronous and asynchronous processing, the API
-    returns the error response PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST.
+      - `PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_ASYNC_RESPONSE`: the API consumer requested the
+      asynchronous behaviour by providing `sink`, but the API provider does not support asynchronous
+      processing at all. This error depends only on the capabilities of the implementation, never on
+      the size of the request: it is returned even for a request small enough to be served
+      synchronously. The API consumer can retry the same request without `sink` to obtain a
+      synchronous response.
+
+      - `PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SYNC_RESPONSE`: the combination of area, precision,
+      startTime and endTime involves an amount of processing that cannot be handled synchronously,
+      and asynchronous processing is not enabled. Unlike the previous error, this one depends on the
+      size of the request, so a smaller request would succeed.
+
+      - `PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST`: the combination of area, precision,
+      startTime and endTime is too big to be processed **even asynchronously**. Retrying with `sink`
+      does not help; only a smaller request does.
 
     If an error happens during the asynchronous processing of the request. The
     API callback will have property status with value OPERATION_NOT_COMPLETED
     as an error cannot be returned in the callback. The callback will also
     include the statusInfo property to add extra information about the error.
 
-    NOTE: In case the property "Technology" is not included, the quality of connectivity
+    NOTE: In case the property "networkType" is not included, the quality of connectivity
     will be returned considering both 4G and 5G networks.
 
     # Resources and Operations overview
@@ -128,6 +138,7 @@ info:
     type/s.
 
     <!-- CAMARA:MANDATORY:authorization-and-authentication:BEGIN -->
+
     # Authorization and authentication
 
     The "Camara Security and Interoperability Profile" provides details of how an API consumer requests an access token. Please refer to Identity and Consent Management (https://github.com/camaraproject/IdentityAndConsentManagement/) for the released version of the profile.
@@ -138,16 +149,18 @@ info:
     <!-- CAMARA:MANDATORY:authorization-and-authentication:END -->
 
     <!-- CAMARA:MANDATORY:additional-error-responses:BEGIN -->
+
     # Additional CAMARA error responses
 
     The list of error codes in this API specification is not exhaustive. Therefore the API specification MAY not document some non-mandatory error statuses as indicated in `CAMARA API Design Guide`.
 
-    Please refer to the `CAMARA_common.yaml` of the Commonalities Release associated to this API version for a complete list of error responses. The applicable Commonalities Release can be identified in the `API Readiness Checklist` document associated to this API version.
+    Please refer to the `CAMARA_common.yaml` of the Commonalities Release associated to this API version for a complete list of error responses. The applicable Commonalities Release can be identified from the `x-camara-commonalities` field, the changelog and the metadata of the released API version.
 
     As a specific rule, error `501 - NOT_IMPLEMENTED` can be only a possible error response if it is explicitly documented in the API.
     <!-- CAMARA:MANDATORY:additional-error-responses:END -->
 
     <!-- CAMARA:MANDATORY:request-body-strictness:BEGIN -->
+
     # Request body strictness
 
     This API rejects requests with JSON request bodies that contain properties not declared in this specification, at any nesting level. Unknown properties result in a `400 INVALID_ARGUMENT` response.
@@ -156,9 +169,9 @@ info:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
   version: wip
-  x-camara-commonalities: wip
+  x-camara-commonalities: 0.9.0
 externalDocs:
-  description: Product documentation at CAMARA.
+  description: Product documentation at CAMARA
   url: https://github.com/camaraproject/PredictiveConnectivityData
 servers:
   - url: "{apiRoot}/predictive-connectivity-data/vwip"
@@ -257,15 +270,13 @@ paths:
         '400':
           $ref: '#/components/responses/RetrieveConnectivityBadRequest400'
         '401':
-          $ref: '../common/CAMARA_common.yaml#/components/responses/Generic401'
+          $ref: '../common/CAMARA_common.yaml#/components/responses/Unauthenticated401'
         '403':
-          $ref: '../common/CAMARA_common.yaml#/components/responses/Generic403'
-        '404':
-          $ref: '../common/CAMARA_common.yaml#/components/responses/Generic404'
+          $ref: '../common/CAMARA_common.yaml#/components/responses/PermissionDenied403'
         '422':
           $ref: '#/components/responses/RetrieveConnectivityUnprocessableContent422'
         '429':
-          $ref: '../common/CAMARA_common.yaml#/components/responses/Generic429'
+          $ref: '../common/CAMARA_common.yaml#/components/responses/TooManyRequests429'
       callbacks:
         connectivityCallback:
           '{$request.body#/sink}':
@@ -295,15 +306,15 @@ paths:
                     x-correlator:
                       $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
                 "400":
-                  $ref: "../common/CAMARA_common.yaml#/components/responses/Generic400"
+                  $ref: "../common/CAMARA_common.yaml#/components/responses/BadRequest400"
                 "401":
-                  $ref: "../common/CAMARA_common.yaml#/components/responses/Generic401"
+                  $ref: "../common/CAMARA_common.yaml#/components/responses/Unauthenticated401"
                 "403":
-                  $ref: "../common/CAMARA_common.yaml#/components/responses/Generic403"
+                  $ref: "../common/CAMARA_common.yaml#/components/responses/PermissionDenied403"
                 "410":
-                  $ref: "../common/CAMARA_common.yaml#/components/responses/Generic410"
+                  $ref: "../common/CAMARA_event_common.yaml#/components/responses/SinkGone410"
                 "429":
-                  $ref: "../common/CAMARA_common.yaml#/components/responses/Generic429"
+                  $ref: "../common/CAMARA_common.yaml#/components/responses/TooManyRequests429"
               security:
                 - {}
                 - notificationsBearerAuth: []
@@ -359,12 +370,14 @@ components:
             quality will be returned.
           default: false
         sink:
-          type: string
-          format: uri
-          maxLength: 2048
-          description: The address where the API response will be asynchronously delivered, using the HTTP protocol.
-          pattern: ^https:\/\/.+$
-          example: 'https://endpoint.example.com/sink'
+          description: |
+            The address where the API response will be asynchronously delivered, using the HTTP protocol.
+            Providing `sink` enforces the asynchronous behaviour of the API. If the API provider does not
+            support asynchronous processing, the request MUST be rejected with the error response
+            `422 PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_ASYNC_RESPONSE` and no callback is delivered.
+            The API consumer can then retry the request without `sink` to obtain a synchronous response.
+          allOf:
+            - $ref: "../common/CAMARA_event_common.yaml#/components/schemas/Sink"
         sinkCredential:
           $ref: "../common/CAMARA_event_common.yaml#/components/schemas/SinkCredential"
       required:
@@ -514,13 +527,14 @@ components:
             - operationId
     OperationId:
       type: string
+      pattern: ^[a-zA-Z0-9-_:;.\/<>{}]{1,256}$
       maxLength: 256
       description: The unique identifier of the asynchronous operation that is returned when the operation is initiated.
       example: 2322f362-eaab-4cf3-86d2-efcbdf3a7cb4
     ResponseStatus:
       type: string
       description: >-
-        Represents the state of the response for the input polygon defined in the request, the possible values are:
+        Represents the state of the response for the input area defined in the request, the possible values are:
           - `SUPPORTED_AREA`: The whole request area is supported. Connectivity data for the entire requested area is returned.
           - `PART_OF_AREA_NOT_SUPPORTED`: Part of the requested area is outside the MNOs coverage area, the cells outside the coverage
           area will have property `layerConnectivities` with all items in the array with value `ND`.
@@ -545,20 +559,14 @@ components:
         and interval from 2024-01-03T12:00:00Z to 2024-01-03T13:00:00Z).
       properties:
         startTime:
-          type: string
-          format: date-time
-          maxLength: 64
-          description: >-
-            Interval start time. It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6)
-            and must have time zone.
+          description: Interval start time.
+          allOf:
+            - $ref: "../common/CAMARA_common.yaml#/components/schemas/DateTime"
           example: "2023-07-03T10:00:00Z"
         endTime:
-          type: string
-          format: date-time
-          maxLength: 64
-          description: >-
-            Interval end time. It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6)
-            and must have time zone.
+          description: Interval end time.
+          allOf:
+            - $ref: "../common/CAMARA_common.yaml#/components/schemas/DateTime"
           example: "2023-07-03T11:00:00Z"
         cellConnectivityData:
           $ref: '#/components/schemas/CellConnectivityDataArray'
@@ -650,7 +658,7 @@ components:
     RetrieveConnectivityBadRequest400:
       description: >-
         Problem with the client request. In addition to regular scenario of
-        `INVALID_ARGUMENT`, `INVALID_CREDENTIAL`, `INVALID_TOKEN`, another scenarios may exist:
+        `INVALID_ARGUMENT`, `INVALID_CREDENTIAL`, `INVALID_TOKEN`, `INVALID_SINK`, another scenarios may exist:
           - The area is not a polygon shape or has an arbitrary complexity ("code": "PREDICTIVE_CONNECTIVITY_DATA.INVALID_AREA", "message": "The area is not a polygon shape or has an arbitrary complexity")
           - Indicated `startTime` is greater than the maximum allowed ("code": "PREDICTIVE_CONNECTIVITY_DATA.MAX_STARTTIME_EXCEEDED", "message": "Indicated startTime is greater than the maximum allowed")
           - Indicated `startTime` is earlier than the minimum allowed ("code": "PREDICTIVE_CONNECTIVITY_DATA.MIN_STARTTIME_EXCEEDED", "message": "Indicated startTime is earlier than the minimum allowed")
@@ -684,27 +692,13 @@ components:
                       - PREDICTIVE_CONNECTIVITY_DATA.INVALID_TIME_PERIOD
           examples:
             GENERIC_400_INVALID_ARGUMENT:
-              value:
-                status: 400
-                code: INVALID_ARGUMENT
-                message: Invalid input
+              $ref: "../common/CAMARA_common.yaml#/components/examples/GENERIC_400_INVALID_ARGUMENT"
             GENERIC_400_INVALID_CREDENTIAL:
-              description: Invalid sink credential type
-              value:
-                status: 400
-                code: INVALID_CREDENTIAL
-                message: Only Access token or Private key JWT are supported
+              $ref: "../common/CAMARA_event_common.yaml#/components/examples/GENERIC_400_INVALID_CREDENTIAL"
             GENERIC_400_INVALID_TOKEN:
-              value:
-                status: 400
-                code: INVALID_TOKEN
-                message: "Only bearer token is supported"
+              $ref: "../common/CAMARA_event_common.yaml#/components/examples/GENERIC_400_INVALID_TOKEN"
             GENERIC_400_INVALID_SINK:
-              description: Invalid sink value
-              value:
-                status: 400
-                code: INVALID_SINK
-                message: sink not valid for the specified protocol
+              $ref: "../common/CAMARA_event_common.yaml#/components/examples/GENERIC_400_INVALID_SINK"
             PREDICTIVE_CONNECTIVITY_DATA_400_INVALID_AREA:
               value:
                 status: 400
@@ -740,14 +734,14 @@ components:
                   Indicated time period is partially in the past and partially in the future
     RetrieveConnectivityUnprocessableContent422:
       description: >-
-        Problem with the client request. In addition to regular scenario of
-        `INVALID_ARGUMENT`, another scenarios may exist:
-          - Indicated request is too big for both synchronous and asynchronous processing ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST", "message": "The indicated request is too big for both synchronous and asynchronous processing")
+        Problem with the client request. The following scenarios may exist:
+          - Indicated request is too big for both synchronous and asynchronous processing, so providing `sink` does not help ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST", "message": "Indicated combination of area, time interval and precision is too big for both synchronous and asynchronous processing")
           - Indicated cell precision (Geohash level) is not supported ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION", "message": "Indicated cell precision (Geohash level) is not supported")
-          - Indicated request is too big for synchronous processing and asynchronous processing is not enabled ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SYNC_RESPONSE", "message": "The indicated request is too big for synchronous processing and asynchronous processing is not enabled")
+          - Indicated request is too big for synchronous processing and asynchronous processing is not enabled ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SYNC_RESPONSE", "message": "Indicated combination of area, time interval and precision is too big for synchronous processing and asynchronous processing is not enabled")
           - The requested `areaType` is not supported by the MNO ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_AREA_TYPE", "message": "The requested areaType is not supported by the MNO")
           - Indicated service level is not supported ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL", "message": "The service level provided is not supported")
           - `sinkCredential.credentialType` is set to `PRIVATE_KEY_JWT` but no JWK Set is configured for the API consumer ("code": "PRIVATE_KEY_JWT_NOT_CONFIGURED", "message": "No JWK Set configured for PRIVATE_KEY_JWT authentication.")
+          - `sink` is provided but the API provider does not support asynchronous processing at all, whatever the size of the request ("code": "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_ASYNC_RESPONSE", "message": "The API provider does not support the asynchronous processing")
       headers:
         x-correlator:
           $ref: '../common/CAMARA_common.yaml#/components/headers/x-correlator'
@@ -768,9 +762,13 @@ components:
                       - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SYNC_RESPONSE
                       - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_AREA_TYPE
                       - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL
+                      - PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_ASYNC_RESPONSE
                       - PRIVATE_KEY_JWT_NOT_CONFIGURED
           examples:
             PREDICTIVE_CONNECTIVITY_DATA_422_UNSUPPORTED_REQUEST:
+              description: >-
+                The request is too big to be processed even asynchronously, so retrying it with sink does not
+                help. Only a smaller request does
               value:
                 status: 422
                 code: PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST
@@ -782,7 +780,7 @@ components:
                 status: 422
                 code: PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION
                 message: >-
-                  Indicated cell precision (Geohash length) is not supported
+                  Indicated cell precision (Geohash level) is not supported
             PREDICTIVE_CONNECTIVITY_DATA_422_UNSUPPORTED_SYNC_RESPONSE:
               value:
                 status: 422
@@ -800,12 +798,17 @@ components:
                 status: 422
                 code: PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL
                 message: The service level provided is not supported
-            GENERIC_422_PRIVATE_KEY_JWT_NOT_CONFIGURED:
-              description: Private key JWT sink credential type is used but no configuration was pre-shared
+            PREDICTIVE_CONNECTIVITY_DATA_422_UNSUPPORTED_ASYNC_RESPONSE:
+              description: >-
+                The API consumer requested the asynchronous behaviour by providing sink, but the API provider
+                does not support asynchronous processing. Unlike UNSUPPORTED_REQUEST, this error does not depend
+                on the size of the request
               value:
                 status: 422
-                code: PRIVATE_KEY_JWT_NOT_CONFIGURED
-                message: No JWK Set configured for PRIVATE_KEY_JWT authentication.
+                code: PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_ASYNC_RESPONSE
+                message: The API provider does not support the asynchronous processing
+            GENERIC_422_PRIVATE_KEY_JWT_NOT_CONFIGURED:
+              $ref: "../common/CAMARA_event_common.yaml#/components/examples/GENERIC_422_PRIVATE_KEY_JWT_NOT_CONFIGURED"
   examples:
     ConnectivityDataSupportedAreaResponseExample:
       description: Connectivity data supported area response example
@@ -835,8 +838,8 @@ components:
                   - NC
                   - NC
                   - NC
-          - startTime: "2024-01-03T11:00:00Z"
-            endTime: "2024-01-03T12:00:00Z"
+          - startTime: "2024-01-03T12:00:00Z"
+            endTime: "2024-01-03T13:00:00Z"
             cellConnectivityData:
               - geohash: ezdmemd
                 layerConnectivities:
@@ -869,14 +872,14 @@ components:
             cellConnectivityData:
               - geohash: ezdmemd
                 layerConnectivities:
-                  - NC
-                  - NC
-                  - NC
-                  - NC
-                  - NC
-                  - NC
-                  - NC
-                  - NC
+                  - ND
+                  - ND
+                  - ND
+                  - ND
+                  - ND
+                  - ND
+                  - ND
+                  - ND
               - geohash: ezdmemc
                 layerConnectivities:
                   - GC
@@ -887,19 +890,19 @@ components:
                   - NC
                   - NC
                   - NC
-          - startTime: "2024-01-03T13:00:00Z"
-            endTime: "2024-01-03T14:00:00Z"
+          - startTime: "2024-01-03T12:00:00Z"
+            endTime: "2024-01-03T13:00:00Z"
             cellConnectivityData:
               - geohash: ezdmemd
                 layerConnectivities:
-                  - NC
-                  - NC
-                  - NC
-                  - NC
-                  - NC
-                  - NC
-                  - NC
-                  - NC
+                  - ND
+                  - ND
+                  - ND
+                  - ND
+                  - ND
+                  - ND
+                  - ND
+                  - ND
               - geohash: ezdmemc
                 layerConnectivities:
                   - GC

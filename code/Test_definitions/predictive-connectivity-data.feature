@@ -9,6 +9,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
   # * Max and min height allowed
   # * Include the signal strength allowed
   # * Whether `PRIVATE_KEY_JWT` is accepted as `sinkCredential.credentialType`
+  # * Whether asynchronous processing is supported (it determines whether scenarios 07, 08 and 14 or scenario 422.07 apply)
   # * Max size of the response(Combination of area, startTime, endTime, service level and precision requested) supported for a sync response
   # * Max size of the response(Combination of area, startTime, endTime, service level and precision requested) supported for an async response
   # * Limitations about max complexity of requested area allowed
@@ -603,29 +604,24 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response property "$.code" is "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION"
     And the response property "$.message" contains a user friendly text
 
-  @predictive_connectivity_data_422.02_too_big_synchronous_response
-  #To test this scenario provided values for "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" MUST generate a response too big for a synchronous response
-  Scenario: Error 422 when the response is too big for a sync response
+  @predictive_connectivity_data_422.02_too_big_response
+  #To test the sync-only case, provided values MUST generate a response too big for synchronous but processable asynchronously
+  #To test the sync-and-async case, provided values MUST generate a too big response in both sync and async scenarios. Unlike 422.07, this error is caused by the size of the request and applies even when the implementation does support asynchronous processing
+  Scenario Outline: Error 422 when the response is too big for <scenario>
     Given the request body properties "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" are set to valid values
     When the request "retrieveConnectivity" is sent
     Then the response status code is 422
     And the response header "Content-Type" is "application/json"
     And the response property "$.status" is 422
-    And the response property "$.code" is "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SYNC_RESPONSE"
+    And the response property "$.code" is "<error_code>"
     And the response property "$.message" contains a user friendly text
 
-  @predictive_connectivity_data_422.03_too_big_request
-  #To test this scenario provided values for "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" MUST generate a too big response in both sync and async scenarios
-  Scenario: Error 422 when the response is too big for a sync and async response
-    Given the request body properties "$.area.boundary", "$.startTime", "$.endTime" and "$.precision" are set to valid values
-    When the request "retrieveConnectivity" is sent
-    Then the response status code is 422
-    And the response header "Content-Type" is "application/json"
-    And the response property "$.status" is 422
-    And the response property "$.code" is "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST"
-    And the response property "$.message" contains a user friendly text
+    Examples:
+      | scenario               | error_code                                             |
+      | a sync response        | PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SYNC_RESPONSE |
+      | a sync and async response | PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_REQUEST    |
 
-  @predictive_connectivity_data_422.04_unsupported_area_type
+  @predictive_connectivity_data_422.03_unsupported_area_type
   #To test this scenario the implementation must not support the GEOHASHLIST area type
   Scenario: Error 422 when the requested areaType is not supported by the implementation
     Given the request body property "$.area.areaType" is set to "GEOHASHLIST"
@@ -638,7 +634,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response property "$.code" is "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_AREA_TYPE"
     And the response property "$.message" contains a user friendly text
 
-  @predictive_connectivity_data_422.05_unsupported_geohash_precision
+  @predictive_connectivity_data_422.04_unsupported_geohash_precision
   #To test this scenario at least one geohash must use a precision (length) not supported by the implementation
   Scenario: Error 422 when a geohash in the list uses a precision not supported by the implementation
     Given the request body property "$.area.areaType" is set to "GEOHASHLIST"
@@ -651,7 +647,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response property "$.code" is "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION"
     And the response property "$.message" contains a user friendly text
 
-  @predictive_connectivity_data_422.06_unsupported_service_level
+  @predictive_connectivity_data_422.05_unsupported_service_level
   #To test this scenario the requested serviceLevel must be a valid enum value not supported by the implementation
   Scenario: Error 422 when the requested serviceLevel is not supported by the implementation
     Given the request body property "$.serviceLevel" is set to a valid but not supported communication service level
@@ -662,7 +658,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response property "$.code" is "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL"
     And the response property "$.message" contains a user friendly text
 
-  @predictive_connectivity_data_422.07_private_key_jwt_not_configured
+  @predictive_connectivity_data_422.06_private_key_jwt_not_configured
   #To test this scenario the API consumer must not have a JWK Set pre-configured for PRIVATE_KEY_JWT authentication
   Scenario: Error 422 when PRIVATE_KEY_JWT is requested and no JWK Set is configured for the API consumer
     Given the API provider has no JWK Set configured for the API consumer used in the test
@@ -674,6 +670,22 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response property "$.status" is 422
     And the response property "$.code" is "PRIVATE_KEY_JWT_NOT_CONFIGURED"
     And the response property "$.message" contains a user friendly text
+
+  @predictive_connectivity_data_422.07_unsupported_async_response
+  #To test this scenario the implementation must not support asynchronous processing. The request MUST be small enough to be served synchronously, so that the error is caused by the lack of asynchronous support and not by the size of the request
+  Scenario: Error 422 when sink is provided but the implementation does not support asynchronous processing
+    Given the request body property "$.area" is set to a valid testing area within supported regions
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
+    And the request body property "$.serviceLevel" is set to a valid communication service level
+    And the request body properties "$.area", "$.precision", "$.startTime" and "$.endTime" are set to values small enough to be processed synchronously
+    And the request body property "$.sink" is set to a valid HTTPS URL
+    When the request "retrieveConnectivity" is sent
+    Then the response status code is 422
+    And the response header "Content-Type" is "application/json"
+    And the response property "$.status" is 422
+    And the response property "$.code" is "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_ASYNC_RESPONSE"
+    And the response property "$.message" contains a user friendly text
+    And no request is received at the address of the request property "$.sink"
 
   # Error 429 scenarios
 
