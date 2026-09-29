@@ -236,6 +236,23 @@ paths:
                         longitude: 7.12
                   startTime: "2024-01-03T11:00:00Z"
                   endTime: "2024-01-03T12:00:00Z"
+              RetrieveConnectivityRequestTeleOperation:
+                summary: Request with tele-operation service level
+                value:
+                  serviceLevel: TELE_OPERATION
+                  area:
+                    areaType: POLYGON
+                    boundary:
+                      - latitude: 50.735851
+                        longitude: 7.10066
+                      - latitude: 50.74
+                        longitude: 7.11
+                      - latitude: 50.73
+                        longitude: 7.12
+                  startTime: "2024-01-03T11:00:00Z"
+                  endTime: "2024-01-03T12:00:00Z"
+                  networkType: 5G
+                  precision: 7
         required: true
       responses:
         '200':
@@ -445,18 +462,43 @@ components:
       example: ezdmemd
     ServiceLevel:
       description: >-
-        Describes the requested communication service level. Although more
-        categories may be added in the future, for the time being, the possible
-        service levels are as follows:
-          - C2: Command and Control. Consists in connecting an unmanned aerial vehicle with its remote controller. This link allows data transmission in both directions, facilitating real-time operation and feedback.
+        Describes the requested communication service level.
+        Service levels represent predefined communication requirement
+        categories used by the API provider's prediction model to classify
+        expected connectivity. Unless explicitly stated otherwise, the detailed
+        technical criteria associated with each service level are
+        provider-defined and implementation-specific. Service levels do not
+        represent standardised QoS profiles, network performance guarantees,
+        service availability commitments, or operational safety approvals.
+        Although more categories may be added in the future, for the time
+        being, the possible service levels are as follows:
+          - C2: Command and Control. Consists in connecting an unmanned aerial
+            vehicle with its remote controller. This link allows data
+            transmission in both directions, facilitating real-time operation
+            and feedback.
           - STREAM_4K: Streaming in 4K quality.
-          - BEST_EFFORT: This service level provides a qualitative estimation of coverage based on each operator's own prediction models or public coverage maps. It does not imply any guarantee of network performance or service availability. The values of GC, MC, NC, and ND should be interpreted as approximate indicators of expected connectivity quality, not as results derived from standardised thresholds.
-
-        An MNO may not support every service level listed in this enum. If the requested service level is not supported by the MNO, the API returns the error response `PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL`.
+          - TELE_OPERATION: Service level intended for remote operation of
+            vehicles, robots or machines requiring bidirectional low-latency
+            control and high-throughput sensor or video feedback. The
+            connectivity values indicate whether the provider's prediction
+            model expects the requested area, time, height and network type to
+            satisfy the criteria associated with this service level.
+          - BEST_EFFORT: This service level provides a qualitative estimation
+            of coverage based on each operator's own prediction models or
+            public coverage maps. It does not imply any guarantee of network
+            performance or service availability. The values of GC, MC, NC, and
+            ND should be interpreted as approximate indicators of expected
+            connectivity quality, not as results derived from standardised
+            thresholds.
+        An MNO may not support every service level listed in this enum. If the
+        requested service level is not supported by the MNO, the API returns
+        the error response
+        `PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL`.
       type: string
       enum:
         - C2
         - STREAM_4K
+        - TELE_OPERATION
         - BEST_EFFORT
     NetworkType:
       description: >-
