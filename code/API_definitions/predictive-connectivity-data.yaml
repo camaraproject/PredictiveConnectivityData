@@ -447,13 +447,12 @@ components:
             transmission in both directions, facilitating real-time operation
             and feedback.
           - STREAM_4K: Streaming in 4K quality.
-          - TELE_OPERATION: Implementation-specific service level intended for
-            remote operation of vehicles, robots or machines requiring
-            bidirectional low-latency control and high-throughput sensor or
-            video feedback. The connectivity values indicate whether the
-            provider's prediction model expects the requested area, time,
-            height and network type to satisfy the criteria associated with
-            this service level.
+          - TELE_OPERATION: Service level intended for remote operation of
+            vehicles, robots or machines requiring bidirectional low-latency
+            control and high-throughput sensor or video feedback. The
+            connectivity values indicate whether the provider's prediction
+            model expects the requested area, time, height and network type to
+            satisfy the criteria associated with this service level.
           - BEST_EFFORT: This service level provides a qualitative estimation
             of coverage based on each operator's own prediction models or
             public coverage maps. It does not imply any guarantee of network
