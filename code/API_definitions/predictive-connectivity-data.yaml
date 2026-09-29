@@ -461,7 +461,11 @@ components:
             ND should be interpreted as approximate indicators of expected
             connectivity quality, not as results derived from standardised
             thresholds.
-      type: string
+        An MNO may not support every service level listed in this enum. If the
+        requested service level is not supported by the MNO, the API returns
+        the error response
+        `PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL`.
+  type: string
       enum:
         - C2
         - STREAM_4K
