@@ -223,6 +223,23 @@ paths:
                         longitude: 7.12
                   startTime: "2024-01-03T11:00:00Z"
                   endTime: "2024-01-03T12:00:00Z"
+              RetrieveConnectivityRequestTeleOperation:
+                summary: Request with tele-operation service level
+                value:
+                  serviceLevel: TELE_OPERATION
+                  area:
+                    areaType: POLYGON
+                    boundary:
+                      - latitude: 50.735851
+                        longitude: 7.10066
+                      - latitude: 50.74
+                        longitude: 7.11
+                      - latitude: 50.73
+                        longitude: 7.12
+                  startTime: "2024-01-03T11:00:00Z"
+                  endTime: "2024-01-03T12:00:00Z"
+                  networkType: 5G
+                  precision: 7
         required: true
       responses:
         '200':
