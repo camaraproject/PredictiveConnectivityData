@@ -332,7 +332,7 @@ components:
         serviceLevel:
           $ref: '#/components/schemas/ServiceLevel'
         area:
-          $ref: '#/components/schemas/Area'
+          $ref: '#/components/schemas/GeoArea'
         startTime:
           $ref: "../common/CAMARA_common.yaml#/components/schemas/DateTime"
         endTime:
@@ -384,20 +384,20 @@ components:
         - area
         - startTime
         - endTime
-    Area:
+    GeoArea:
       description: Base schema for all areas
       type: object
       properties:
         areaType:
-          $ref: "#/components/schemas/AreaType"
+          $ref: "#/components/schemas/GeoAreaType"
       required:
         - areaType
       discriminator:
         propertyName: areaType
         mapping:
-          POLYGON: "#/components/schemas/Polygon"
+          POLYGON: "#/components/schemas/GeoPolygon"
           GEOHASHLIST: "#/components/schemas/GeohashList"
-    AreaType:
+    GeoAreaType:
       type: string
       description: |
         Type of this area.
@@ -406,10 +406,10 @@ components:
       enum:
         - POLYGON
         - GEOHASHLIST
-    Polygon:
+    GeoPolygon:
       description: Polygonal area. The Polygon should be a simple polygon, i.e. should not intersect itself.
       allOf:
-        - $ref: "#/components/schemas/Area"
+        - $ref: "#/components/schemas/GeoArea"
         - type: object
           required:
             - boundary
@@ -420,7 +420,7 @@ components:
       description: >-
         Area defined as a list of geohashes. Geohashes do not need to be adjacent or contiguous and may have different precision levels (string lengths), as long as the MNO supports all of them. The `precision` request property MUST NOT be set when `areaType` is `GEOHASHLIST`; if set, the API returns a `400 INVALID_ARGUMENT` error.
       allOf:
-        - $ref: "#/components/schemas/Area"
+        - $ref: "#/components/schemas/GeoArea"
         - type: object
           required:
             - geohashes
