@@ -488,11 +488,11 @@ components:
             $ref: '#/components/schemas/TimedConnectivityData'
           maxItems: 168
         status:
-          $ref: '#/components/schemas/ResponseStatus'
+          $ref: '#/components/schemas/DataQualityInfo'
         statusInfo:
           type: string
           maxLength: 512
-          description: Information about the status, mandatory when property `status` is `OPERATION_NOT_COMPLETED` for adding extra information about the error.
+          description: Provides additional context about `status`. Mandatory when `status` is `OPERATION_NOT_COMPLETED`, to convey the reason the asynchronous processing could not be completed.
           example: Some error happened during the processing of the request
         requestedHeight:
           type: integer
@@ -530,16 +530,14 @@ components:
       maxLength: 256
       description: The unique identifier of the asynchronous operation that is returned when the operation is initiated.
       example: 2322f362-eaab-4cf3-86d2-efcbdf3a7cb4
-    ResponseStatus:
+    DataQualityInfo:
       type: string
       description: >-
-        Represents the state of the response for the input area defined in the request, the possible values are:
+        Provides additional information about the quality and coverage of the included response data for the requested area. This is not an error indicator — it characterises how completely the API was able to fulfil the request:
           - `SUPPORTED_AREA`: The whole request area is supported. Connectivity data for the entire requested area is returned.
-          - `PART_OF_AREA_NOT_SUPPORTED`: Part of the requested area is outside the MNOs coverage area, the cells outside the coverage
-          area will have property `layerConnectivities` with all items in the array with value `ND`.
-          - `AREA_NOT_SUPPORTED`: The whole requested area is outside the MNOs coverage area. No data will be returned.
-          - `OPERATION_NOT_COMPLETED`: An error happened during asynchronous processing of the request. This status will only be returned
-          in case the asynchronous API behaviour is used.
+          - `PART_OF_AREA_NOT_SUPPORTED`: Part of the requested area is outside the MNO's coverage area. Cells outside coverage have property `layerConnectivities` with all items set to `ND`.
+          - `AREA_NOT_SUPPORTED`: The whole requested area is outside the MNO's coverage area. No connectivity data is returned.
+          - `OPERATION_NOT_COMPLETED`: The asynchronous processing of the request could not be completed. This value is only used in asynchronous callbacks. See `statusInfo` for details.
       enum:
         - SUPPORTED_AREA
         - PART_OF_AREA_NOT_SUPPORTED
