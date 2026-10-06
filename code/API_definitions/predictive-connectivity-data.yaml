@@ -17,7 +17,6 @@ info:
 
     - **BVLOS (Beyond Visual Line of Sight) drone operations**, supporting drone flight planning with detailed analysis of mobile network coverage in the airspace across specific geographic areas.
     - **Autonomous vehicle route planning**, enabling route optimization through in-depth evaluation of mobile network availability along planned routes.
-    - **IoT deployment planning**, assessing connectivity coverage for planned sensor or device installations.
 
     These examples illustrate typical applications, but the API can be used in many other scenarios where predictive connectivity estimation is relevant.
 
@@ -45,7 +44,7 @@ info:
     The vertical height above the ground, in metres. Used to define the prediction height and to describe the vertical layering of connectivity data.
 
     **Layer**
-    A vertical subdivision of the airspace above a grid cell. All layers have the same thickness (`layerThickness` metres) and are ordered consecutively starting from the ground (index 0 = 0 m AGL). The layer at index N covers the altitude range from N × `layerThickness` to (N+1) × `layerThickness` metres AGL.
+    A vertical subdivision of the airspace above a grid cell. All layers have the same thickness (`layerThickness` metres) and are ordered consecutively starting from the ground (index 0 = 0 m AGL). The layer at index N covers the altitude range from N x `layerThickness` to (N+1) x `layerThickness` metres AGL.
 
     **Signal Strength**
     Raw signal strength measurements in dBm that can be optionally included in the response when supported by the implementation and requested via `includeSignalStrength`.
@@ -64,7 +63,7 @@ info:
 
     **Precision**
     Defines the granularity level of grid cells.
-    - **POLYGON**: The precision level is given by the `precision` request property. If not included, the default precision level 7 is used. As a reference, a cell is approximately 153 m × 153 m at level 7.
+    - **POLYGON**: The precision level is given by the `precision` request property. If not included, the default precision level 7 is used. As a reference, a cell is approximately 153 m x 153 m at level 7.
     - **GEOHASHLIST**: Each geohash's own length determines its precision. The `precision` property MUST NOT be included.
 
     **MNO Coverage Area**
@@ -76,9 +75,6 @@ info:
 
     **OperationId**
     A unique identifier correlating an asynchronous request with its callback notification.
-
-    **Callback URL and Token**
-    A callback URL (`sink`) may be provided to receive asynchronous results. When `sink` is used, it is RECOMMENDED for the client to also provide `sinkCredential` to secure the callback endpoint. Supported credential types are `ACCESSTOKEN` and `PRIVATE_KEY_JWT`.
 
     # API Functionality
 
@@ -100,7 +96,7 @@ info:
 
     Polygon areas must meet certain constraints:
     - Maximum polygon area size (implementation-specific).
-    - The polygon cannot have an arbitrary complexity (unlimited number of sides, complex shapes, etc.).
+    - Must have a minimum of 3 and can have a maximum of 15 geographical points defining the polygon.
     - Must lie at least partially within the MNO coverage area; otherwise, the response has `status` set to `AREA_NOT_SUPPORTED` and an empty array is returned.
 
     For geohash lists:
@@ -122,12 +118,7 @@ info:
     # Resources and Operations Overview
 
     The API exposes a single POST endpoint (`/retrieve`) for retrieving predictive connectivity data for a specified area, service level, network type, and time interval.
-    The API call result is an array of time slots (`timedConnectivityData`), with per time slot an array of cells (`cellConnectivityData`), with for each cell the connectivity levels per vertical layer. The possible connectivity values are:
-
-    - **GC**: Good connectivity. Service level met even in unfavorable conditions.
-    - **MC**: Marginal connectivity. Service level might not be met.
-    - **NC**: No connectivity. Service level not met.
-    - **ND**: No connectivity data available.
+    The API call result is an array of time slots (`timedConnectivityData`), with per time slot an array of cells (`cellConnectivityData`), with for each cell the connectivity levels per vertical layer (see **Connectivity Level** in the definitions above).
 
     **Callback URL and token**
     Developers may provide a callback URL (`sink`) for receiving an asynchronous response. This is an optional parameter. If `sink` is included, it is RECOMMENDED for the client to provide as well the `sinkCredential` property to protect the notification endpoint. If provided, `sinkCredential.credentialType` MUST be set to `ACCESSTOKEN` or `PRIVATE_KEY_JWT`.
@@ -345,7 +336,7 @@ components:
           description: >-
             Precision required of response cells. Precision defines a geohash level and corresponds to the length of the geohash for each cell. More information at [Geohash system](https://en.wikipedia.org/wiki/Geohash).
             When `area.areaType` is `POLYGON`, if not included the default precision level 7 is used.
-            Values within the schema range (1–12) that are not supported by the MNO return the error response `422 PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION`. Values outside the schema range are invalid per the OpenAPI definition and return `400 INVALID_ARGUMENT` via request validation.
+            Values within the schema range (1-12) that are not supported by the MNO return the error response `422 PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_PRECISION`. Values outside the schema range are invalid per the OpenAPI definition and return `400 INVALID_ARGUMENT` via request validation.
             This property MUST only be set when `area.areaType` is `POLYGON`. When `area.areaType` is `GEOHASHLIST`, each requested geohash determines the granularity of its own response cell; if `precision` is sent, the API returns a `400 INVALID_ARGUMENT` error.
           minimum: 1
           maximum: 12
@@ -488,7 +479,7 @@ components:
             $ref: '#/components/schemas/TimedConnectivityData'
           maxItems: 168
         status:
-          $ref: '#/components/schemas/DataQualityInfo'
+          $ref: '#/components/schemas/ResponseQualityInfo'
         statusInfo:
           type: string
           maxLength: 512
@@ -530,10 +521,10 @@ components:
       maxLength: 256
       description: The unique identifier of the asynchronous operation that is returned when the operation is initiated.
       example: 2322f362-eaab-4cf3-86d2-efcbdf3a7cb4
-    DataQualityInfo:
+    ResponseQualityInfo:
       type: string
       description: >-
-        Provides additional information about the quality and coverage of the included response data for the requested area. This is not an error indicator — it characterises how completely the API was able to fulfil the request:
+        Provides additional information about the quality and coverage of the included response data for the requested area. This is not an HTTP error indicator - it characterises how completely the API was able to fulfil the request:
           - `SUPPORTED_AREA`: The whole request area is supported. Connectivity data for the entire requested area is returned.
           - `PART_OF_AREA_NOT_SUPPORTED`: Part of the requested area is outside the MNO's coverage area. Cells outside coverage have property `layerConnectivities` with all items set to `ND`.
           - `AREA_NOT_SUPPORTED`: The whole requested area is outside the MNO's coverage area. No connectivity data is returned.
