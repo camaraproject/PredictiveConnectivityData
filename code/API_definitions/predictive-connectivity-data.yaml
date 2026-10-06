@@ -50,12 +50,12 @@ info:
     Raw signal strength measurements in dBm that can be optionally included in the response when supported by the implementation and requested via `includeSignalStrength`.
 
     **Area Types**
-    - **POLYGON**: Area defined by a list of latitude/longitude points forming a simple polygon. The polygon is subdivided into a grid of equal-sized cells based on the requested precision.
+    - **POLYGON**: Area defined by a list of latitude/longitude points forming a simple polygon. The set of cells for the polygon correspond to the geohashes covering the polygon obtained by applying the requested precision.
     - **GEOHASHLIST**: Area defined as a list of geohash strings. Geohashes may be individual, non-contiguous geographical areas each with their own (possibly different) precision.
 
     **Grid Cell**
     A subdivision of the requested area.
-    - For polygon areas, the grid is the set of geohash cells, at the applicable precision level, that cover the polygon. All cells have the same precision level and therefore the same size in degrees of latitude and longitude.
+    - For polygon areas, the grid is the set of geohash cells, at the applicable precision level, that cover the polygon. All cells have the same precision level.
     - For geohash lists, each geohash corresponds to a single cell at its own precision level.
 
     **Geohash**
@@ -89,7 +89,7 @@ info:
 
     The API returns a sequence of time slots covering the specified interval. Each time slot contains connectivity data for all the grid cells covering the requested area.
 
-    - For polygon areas, the API subdivides the polygon into equal-sized grid cells based on the requested precision.
+    - For polygon areas, the API generates a grid of geohash cells at the requested precision level that cover the polygon.
     - For geohash lists, each geohash corresponds to a single cell, and the `precision` property MUST NOT be included.
 
     Connectivity levels are calculated based on network data and/or prediction models trained on such data.
@@ -121,7 +121,7 @@ info:
     The API call result is an array of time slots (`timedConnectivityData`), with per time slot an array of cells (`cellConnectivityData`), with for each cell the connectivity levels per vertical layer (see **Connectivity Level** in the definitions above).
 
     **Callback URL and token**
-    Developers may provide a callback URL (`sink`) for receiving an asynchronous response. This is an optional parameter. If `sink` is included, it is RECOMMENDED for the client to provide as well the `sinkCredential` property to protect the notification endpoint. If provided, `sinkCredential.credentialType` MUST be set to `ACCESSTOKEN` or `PRIVATE_KEY_JWT`.
+    API Consumers may provide a callback URL (`sink`) for receiving an asynchronous response. This is an optional parameter. If `sink` is included, it is RECOMMENDED for the API Consumer to provide as well the `sinkCredential` property to protect the callback endpoint. If provided, `sinkCredential.credentialType` MUST be set to `ACCESSTOKEN` or `PRIVATE_KEY_JWT`.
 
     - When an asynchronous response is requested (using `sink`), the 202 response of the API will include an `operationId` property. This `operationId` property will also be sent in the callback payload. The purpose of the `operationId` is to correlate an asynchronous response with its corresponding request.
 
