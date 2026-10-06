@@ -50,7 +50,7 @@ info:
     Raw signal strength measurements in dBm that can be optionally included in the response when supported by the implementation and requested via `includeSignalStrength`.
 
     **Area Types**
-    - **POLYGON**: Area defined by a list of latitude/longitude points forming a simple polygon. The set of cells for the polygon correspond to the geohashes covering the polygon obtained by applying the requested precision.
+    - **POLYGON**: Area defined by a list of latitude/longitude points forming a simple polygon. The polygon is subdivided into a grid of cells. The set of cells corresponds to the geohashes, at the requested precision, that cover the polygon.
     - **GEOHASHLIST**: Area defined as a list of geohash strings. Geohashes may be individual, non-contiguous geographical areas each with their own (possibly different) precision.
 
     **Grid Cell**
