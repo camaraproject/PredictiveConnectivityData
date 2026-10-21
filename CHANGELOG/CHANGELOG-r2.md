@@ -63,7 +63,7 @@ Changes documented below are compared to version 0.2.0-rc.1.
 * Fix Release r2.1 issues by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/74
   * Add new error response code 422 PRIVATE_KEY_JWT_NOT_CONFIGURED
 * Align Predictive Connectivity Data with Commonalities 0.9.0 (r4.4) by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/78
-  * Add new error code 422 PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_ASYNC_RESPONSE
+  * Add new error response code 422 PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_ASYNC_RESPONSE
   
 
 ### Added
