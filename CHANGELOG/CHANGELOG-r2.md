@@ -73,7 +73,7 @@ Changes documented below are compared to version 0.2.0-rc.1.
 
 ### Fixed
 
-* N/A
+* Fix typos in feature file (#68), contradictory description of supported `sinkCredential.credentialType` values (#69), and `jwksUri` never returned for `PRIVATE_KEY_JWT` sink credentials (#70) by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/74
 
 ### Removed
 
