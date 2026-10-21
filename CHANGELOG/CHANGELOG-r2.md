@@ -68,7 +68,8 @@ Changes documented below are compared to version 0.2.0-rc.1.
 
 ### Changed
 
-* N/A
+* Restructure API inline documentation (#84), rename local schemas to avoid clashes with CAMARA common types (`Area` → `GeoArea`, etc.) (#85), and rename `ResponseStatus` to `DataQualityInfo` to clarify data quality vs. HTTP error semantics (#86) by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/87
+* Align Predictive Connectivity Data with Commonalities 0.9.0 (r4.4) by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/78
 
 ### Fixed
 
