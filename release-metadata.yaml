@@ -1,0 +1,13 @@
+repository:
+  repository_name: PredictiveConnectivityData
+  release_tag: r2.3
+  release_type: public-release
+  release_date: null
+  src_commit_sha: 41506eaea1a5a9cd5c9751cde7468ce606f99d0a
+apis:
+- api_name: predictive-connectivity-data
+  api_version: 0.2.0
+  api_title: Predictive Connectivity Data
+dependencies:
+  commonalities_release: r4.4 (0.9.0)
+  identity_consent_management_release: r4.2 (0.5.0)
