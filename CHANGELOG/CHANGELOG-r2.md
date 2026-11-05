@@ -85,19 +85,28 @@ Changes documented below are compared to version 0.1.0.
 
 ### Added
 
-* N/A
+* Add the `BEST_EFFORT` service level, which provides no specific service level guarantee by @eric-murray in https://github.com/camaraproject/PredictiveConnectivityData/pull/27
+* Add optional `GEOHASHLIST` area type (reusable `GeohashList` and `Geohash` schemas), aligned with Population Density Data. Add the `422` errors `PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_AREA_TYPE` and `PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_SERVICE_LEVEL`, and restrict `precision` to `POLYGON` requests only (using it with `GEOHASHLIST` returns `400 INVALID_ARGUMENT`) by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/50
+* Add Gherkin test scenarios for `GEOHASHLIST` (supported, partially supported and unsupported areas), the new `422` errors and general request validation, and update the existing scenarios to be area-type agnostic and to accept `BEST_EFFORT` by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/63
+* Add test coverage for the `PRIVATE_KEY_JWT` sink credential and for the `422 PRIVATE_KEY_JWT_NOT_CONFIGURED` error by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/76
 
 ### Changed
 
-* N/A
+* Align the API definition with Commonalities 0.9.0 (r4.4): use the new shared error responses and the common `Sink` schema, and add the `422 UNSUPPORTED_ASYNC_RESPONSE` error for implementations that cannot answer asynchronously by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/78
+* Sync the API definition with the common files of Commonalities r4.3 by @eric-murray in https://github.com/camaraproject/PredictiveConnectivityData/pull/57
+* Apply the r2.2 review findings: restructure the API description into shorter points with extra terminology definitions, rename the local schemas `Area`, `AreaType` and `Polygon` to `GeoArea`, `GeoAreaType` and `GeoPolygon` to avoid clashes with CAMARA common data types, and rename `ResponseStatus` to `ResponseQualityInfo` to separate data quality information from error responses by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/87
+* Reword the Predictive Connectivity Data user story to reflect the latest API changes, with no functional change by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/43
 
 ### Fixed
 
-* N/A
+* Fix the CAMARA validation warnings and hints reported for the API definition by @eric-murray in https://github.com/camaraproject/PredictiveConnectivityData/pull/60
+* Add the missing type definition to the `CellConnectivityData` schema, which would otherwise fail CAMARA validation by @eric-murray in https://github.com/camaraproject/PredictiveConnectivityData/pull/58
+* Fix the test definitions that wrongly required each returned time interval to lie strictly inside the requested range. The intervals must cover the requested range, so the first one may start earlier and the last one may end later by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/46
+* Fix the issues found in the r2.1 release candidate, including typos in the test definitions, by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/74
 
 ### Removed
 
-* N/A
+* Remove the API Readiness Checklist document, which the new release automation process makes unnecessary by @albertoramosmonagas in https://github.com/camaraproject/PredictiveConnectivityData/pull/62
 
 **Full Changelog**: https://github.com/camaraproject/PredictiveConnectivityData/compare/r1.2...r2.3
 
