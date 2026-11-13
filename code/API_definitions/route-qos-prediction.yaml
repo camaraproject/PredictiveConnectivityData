@@ -1,0 +1,435 @@
+openapi: 3.0.3
+info:
+  title: Route QoS Prediction
+  description: |
+    The Route QoS Prediction API provides trajectory-aware, per-segment forecasts of network quality along a planned route, before a device travels it. It is a scope enhancement of Predictive Connectivity Data: it reuses that API's prediction model but accepts a route (an ordered list of waypoints) instead of an area, and returns a forecast broken down per route segment in travel order instead of per grid cell.
+
+    # Introduction
+
+    An application submits a planned route and receives a forecast of network conditions (latency, throughput, and the reliability of any declared QoS requirements) with a confidence value for each segment of that route. Typical use cases include an ambulance dispatcher checking which segments of a route have weak connectivity before departure, a fleet operator comparing two candidate routes by their expected QoS, or a drone operator validating that a planned flight corridor has sufficient coverage before authorizing it.
+
+    This API only produces the forecast. Route optimisation or selection, invoking Quality on Demand, and any application-level adaptation to the forecast are outside its scope; they are useful examples of how an application might compose this capability with other CAMARA APIs, not part of this API itself.
+
+    # Relevant Terms and Definitions
+
+    **Route**
+    A planned route expressed as an ordered list of waypoints, from 2 up to 50. Granularity is controlled entirely by how densely the application places its waypoints; the API does not resample or interpolate the submitted route.
+
+    **Segment**
+    The portion of the route between two consecutive waypoints. The forecast returns one entry per segment, in travel order, each referencing the `startWaypointIndex` and `endWaypointIndex` of the originally submitted route.
+
+    **QoS Requirement**
+    A metric (`LATENCY`, `THROUGHPUT`, or `RELIABILITY`) together with a target value the caller wants assessed along the route. For each requirement, each segment's forecast includes a `reliabilityScore`: the predicted probability that the target is met across that segment.
+
+    **Outcome Status**
+    Every segment carries a mandatory `outcome.status`. When it is not `AVAILABLE` (for example `INSUFFICIENT_DATA`, `OUT_OF_COVERAGE`, `NOT_SUPPORTED`, or `UNAVAILABLE`), all metric fields for that segment are `null` rather than omitted or silently defaulted, so the application can handle the gap explicitly.
+
+    **Confidence**
+    `confidenceLevel` is a best-effort, implementation-specific probability (0.0-1.0) that a segment's own prediction is correct; it is not guaranteed to be comparable across operators. `confidenceBand` (`LOW`/`MEDIUM`/`HIGH`) is a coarser, more portable indicator for cross-operator comparison.
+
+    All QoS metric values returned by this API are best-effort predictive estimations. They are non-binding and MUST NOT be interpreted as a service-level guarantee.
+
+    # API Functionality
+
+    The API exposes a single `POST /retrieve` operation. The API consumer submits a route, the QoS requirements to assess, and optionally a device identifier (the MVP is device-independent: if a 3-legged access token is used, the device is derived from the token and the `device` object is omitted) and a `predictionHorizon` bounding how far ahead the forecast should look.
+
+    The response is a stateless, synchronous forecast: nothing is stored server-side and no resource identifier is returned. It is not a subscription to future forecast changes; ongoing forecast-change notifications are handled by the companion Route QoS Prediction Subscriptions API.
+
+    How an operator computes the forecast (for example, interpolating from an area-level model such as Predictive Connectivity Data's own, or using a native per-segment model) is an implementation detail left to the provider. The `confidenceLevel` and `confidenceBand` fields give the application a direct signal of prediction quality regardless of the underlying approach.
+
+    # Informative Annex: Reference Architecture
+
+    The diagram below illustrates one possible way an application might compose this API with others; it is informative only and not part of the normative API contract.
+
+    ![Route QoS Prediction Reference Architecture](https://raw.githubusercontent.com/camaraproject/PredictiveConnectivityData/main/documentation/SupportingDocuments/route-qos-prediction-reference-architecture.png)
+
+    An ambulance dispatcher application submits a planned route (1) and receives a per-segment forecast (2). The application identifies segments where `reliabilityScore` falls below an acceptable threshold (3) and, outside the scope of this API, invokes Quality on Demand to pre-establish a prioritized session on those segments (4) before the ambulance departs (5). How the operator network realises the forecast internally is implementation-specific and shown here only as a black box.
+
+    <!-- CAMARA:MANDATORY:authorization-and-authentication:BEGIN -->
+
+    # Authorization and authentication
+
+    The "Camara Security and Interoperability Profile" provides details of how an API consumer requests an access token. Please refer to Identity and Consent Management (https://github.com/camaraproject/IdentityAndConsentManagement/) for the released version of the profile.
+
+    The specific authorization flows to be used will be agreed upon during the onboarding process, happening between the API consumer and the API provider, taking into account the declared purpose for accessing the API, whilst also being subject to the prevailing legal framework dictated by local legislation.
+
+    In cases where personal data is processed by the API and users can exercise their rights through mechanisms such as opt-in and/or opt-out, the use of three-legged access tokens is mandatory. This ensures that the API remains in compliance with privacy regulations, upholding the principles of transparency and user-centric privacy-by-design.
+    <!-- CAMARA:MANDATORY:authorization-and-authentication:END -->
+
+    <!-- CAMARA:MANDATORY:additional-error-responses:BEGIN -->
+
+    # Additional CAMARA error responses
+
+    The list of error codes in this API specification is not exhaustive. Therefore the API specification MAY not document some non-mandatory error statuses as indicated in `CAMARA API Design Guide`.
+
+    Please refer to the `CAMARA_common.yaml` of the Commonalities Release associated to this API version for a complete list of error responses. The applicable Commonalities Release can be identified from the `x-camara-commonalities` field, the changelog and the metadata of the released API version.
+
+    As a specific rule, error `501 - NOT_IMPLEMENTED` can be only a possible error response if it is explicitly documented in the API.
+    <!-- CAMARA:MANDATORY:additional-error-responses:END -->
+
+    <!-- CAMARA:MANDATORY:request-body-strictness:BEGIN -->
+
+    # Request body strictness
+
+    This API rejects requests with JSON request bodies that contain properties not declared in this specification, at any nesting level. Unknown properties result in a `400 INVALID_ARGUMENT` response.
+    <!-- CAMARA:MANDATORY:request-body-strictness:END -->
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  version: wip
+  x-camara-commonalities: 0.9.0
+externalDocs:
+  description: Product documentation at CAMARA
+  url: https://github.com/camaraproject/PredictiveConnectivityData
+servers:
+  - url: "{apiRoot}/route-qos-prediction/vwip"
+    variables:
+      apiRoot:
+        default: http://localhost:9091
+        description: API root, defined by the service provider, e.g. `api.example.com` or `api.example.com/somepath`
+tags:
+  - name: Route QoS Prediction
+    description: Retrieve a per-segment QoS forecast for a planned route.
+paths:
+  /retrieve:
+    post:
+      tags:
+        - Route QoS Prediction
+      summary: Retrieve a route QoS forecast
+      description: >-
+        Submit a planned route and receive a per-segment QoS forecast.
+        This is a stateless retrieval: nothing is stored server-side and no
+        resource identifier is returned. It is not a subscription to future
+        forecast changes; see the companion Route QoS Prediction Subscriptions API.
+      operationId: retrieveRouteQosForecast
+      security:
+        - openId:
+            - route-qos-prediction:read
+      parameters:
+        - $ref: "../common/CAMARA_common.yaml#/components/parameters/x-correlator"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RetrieveRouteQosRequest"
+            examples:
+              RetrieveRouteQosRequestExample:
+                $ref: "#/components/examples/RetrieveRouteQosRequestExample"
+      responses:
+        "200":
+          description: Forecast returned
+          headers:
+            x-correlator:
+              $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RouteQosForecast"
+              examples:
+                RouteQosForecastExample:
+                  $ref: "#/components/examples/RouteQosForecastExample"
+        "400":
+          $ref: "../common/CAMARA_common.yaml#/components/responses/BadRequestWithRange400"
+        "401":
+          $ref: "../common/CAMARA_common.yaml#/components/responses/Unauthenticated401"
+        "403":
+          $ref: "../common/CAMARA_common.yaml#/components/responses/PermissionDenied403"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType415"
+        "422":
+          $ref: "../common/CAMARA_common.yaml#/components/responses/DeviceIdentifier422"
+        "429":
+          $ref: "../common/CAMARA_common.yaml#/components/responses/TooManyRequests429"
+components:
+  securitySchemes:
+    openId:
+      $ref: "../common/CAMARA_common.yaml#/components/securitySchemes/openId"
+  responses:
+    UnsupportedMediaType415:
+      description: Unsupported Media Type
+      headers:
+        x-correlator:
+          $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "../common/CAMARA_common.yaml#/components/schemas/ErrorInfo"
+              - type: object
+                properties:
+                  status:
+                    enum:
+                      - 415
+                  code:
+                    enum:
+                      - UNSUPPORTED_MEDIA_TYPE
+          examples:
+            GENERIC_415_UNSUPPORTED_MEDIA_TYPE:
+              value:
+                status: 415
+                code: UNSUPPORTED_MEDIA_TYPE
+                message: The server refuses to accept the request because the payload format is in an unsupported format.
+  schemas:
+    RetrieveRouteQosRequest:
+      description: Request for a route QoS forecast for a planned route.
+      type: object
+      additionalProperties: false
+      required:
+        - route
+        - qosRequirements
+      properties:
+        device:
+          $ref: "../common/CAMARA_common.yaml#/components/schemas/Device"
+        route:
+          $ref: "#/components/schemas/Route"
+        qosRequirements:
+          type: array
+          minItems: 1
+          description: |
+            The QoS requirements the caller wants forecast for each segment. Each
+            requirement declares a metric and the target value to assess against;
+            `reliabilityScore` is then the probability that target is met.
+          items:
+            $ref: "#/components/schemas/QosRequirement"
+        predictionHorizon:
+          type: string
+          format: date-time
+          description: |
+            Upper time bound of interest. The forecast targets the period during
+            which the device is expected to traverse the route, up to this time.
+
+    Route:
+      type: object
+      description: A planned route expressed as an ordered list of waypoints.
+      required:
+        - waypoints
+      properties:
+        waypoints:
+          type: array
+          minItems: 2
+          maxItems: 50
+          description: |
+            Ordered geographic waypoints describing the route/corridor. Native
+            route input, rather than a polygon or area, is the delta this API
+            adds on top of Predictive Connectivity Data.
+          items:
+            $ref: "../common/CAMARA_common.yaml#/components/schemas/Point"
+
+    QosMetricName:
+      type: string
+      description: Name of a forecastable QoS metric.
+      enum:
+        - LATENCY
+        - THROUGHPUT
+        - RELIABILITY
+
+    QosRequirement:
+      description: |
+        A QoS requirement to assess along the route: a metric plus the target value
+        the caller needs. The target is interpreted per metric:
+        `LATENCY` is an upper bound in milliseconds; `THROUGHPUT` is a lower bound in
+        Mbps; `RELIABILITY` is a lower bound on a 0.0-1.0 scale.
+      type: object
+      required:
+        - metric
+        - targetValue
+      properties:
+        metric:
+          $ref: "#/components/schemas/QosMetricName"
+        targetValue:
+          type: number
+          format: float
+          minimum: 0
+          description: The target value for the metric, interpreted per the metric definition.
+
+    RouteQosForecast:
+      description: A per-segment QoS forecast for the submitted route. Stateless; not stored server-side.
+      type: object
+      required:
+        - segments
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+          description: Time at which the forecast was generated.
+        validUntil:
+          type: string
+          format: date-time
+          description: Time after which the forecast should be considered stale and re-requested.
+        segments:
+          type: array
+          description: Per-segment forecast, in route order.
+          items:
+            $ref: "#/components/schemas/RouteSegment"
+
+    RouteSegment:
+      description: The forecast for a single segment of the submitted route.
+      type: object
+      required:
+        - segmentId
+        - outcome
+      properties:
+        segmentId:
+          type: string
+          example: "seg-007"
+          description: Identifier of the route segment.
+        startWaypointIndex:
+          type: integer
+          description: Index into the request route waypoints where the segment starts.
+        endWaypointIndex:
+          type: integer
+          description: Index into the request route waypoints where the segment ends.
+        outcome:
+          $ref: "#/components/schemas/SegmentOutcome"
+        latencyMs:
+          type: number
+          format: float
+          nullable: true
+          minimum: 0
+          description: |
+            Best-effort predicted one-way latency in milliseconds.
+            `null` when `outcome.status` is not `AVAILABLE`.
+        throughputMbps:
+          type: number
+          format: float
+          nullable: true
+          minimum: 0
+          description: |
+            Best-effort predicted throughput in Mbps.
+            `null` when `outcome.status` is not `AVAILABLE`.
+        requirementForecasts:
+          type: array
+          nullable: true
+          description: |
+            One entry per requested `qosRequirement`, giving the reliability of that
+            requirement on this segment. `null` when `outcome.status` is not `AVAILABLE`.
+          items:
+            $ref: "#/components/schemas/RequirementForecast"
+        confidenceLevel:
+          type: number
+          format: float
+          nullable: true
+          minimum: 0
+          maximum: 1
+          description: |
+            Best-effort calibrated probability (0.0-1.0) that the model's own
+            prediction for this segment is correct. Degrades with sparse/stale
+            data. Absolute cross-operator equivalence is NOT guaranteed; see
+            `confidenceBand` for a portable, coarser indicator. `null` when
+            `outcome.status` is not `AVAILABLE`.
+        confidenceBand:
+          $ref: "#/components/schemas/ConfidenceBand"
+
+    RequirementForecast:
+      description: The reliability of one requested QoS requirement on a segment.
+      type: object
+      required:
+        - metric
+        - reliabilityScore
+      properties:
+        metric:
+          $ref: "#/components/schemas/QosMetricName"
+        reliabilityScore:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: |
+            Best-effort probability (0.0-1.0) that this requirement's `targetValue`
+            is met across this segment for the duration of traversal.
+
+    SegmentOutcome:
+      type: object
+      description: |
+        Mandatory enum-based outcome for the segment. Always present, including
+        for successful predictions.
+      required:
+        - status
+      properties:
+        status:
+          $ref: "#/components/schemas/OutcomeStatus"
+        reason:
+          type: string
+          description: Human-readable explanation, primarily for non-AVAILABLE statuses.
+
+    OutcomeStatus:
+      type: string
+      description: |
+        * `AVAILABLE` - a prediction was computed; metric fields populated.
+        * `INSUFFICIENT_DATA` - not enough / too-stale data to predict at
+          acceptable confidence; metric fields `null`.
+        * `OUT_OF_COVERAGE` - segment outside served coverage; no service
+          expected; metric fields `null`.
+        * `NOT_SUPPORTED` - a requested metric is not supported for this
+          segment/area; metric fields `null`.
+        * `UNAVAILABLE` - prediction could not be produced (internal/transient);
+          metric fields `null`.
+      enum:
+        - AVAILABLE
+        - INSUFFICIENT_DATA
+        - OUT_OF_COVERAGE
+        - NOT_SUPPORTED
+        - UNAVAILABLE
+
+    ConfidenceBand:
+      type: string
+      description: |
+        Coarse, cross-operator-portable confidence indicator. Provided as a more
+        comparable alternative to the numeric `confidenceLevel`.
+      enum:
+        - LOW
+        - MEDIUM
+        - HIGH
+  examples:
+    RetrieveRouteQosRequestExample:
+      summary: Ambulance dispatch route with latency and reliability requirements
+      value:
+        route:
+          waypoints:
+            - latitude: 50.735851
+              longitude: 7.10066
+            - latitude: 50.74
+              longitude: 7.11
+            - latitude: 50.73
+              longitude: 7.12
+        qosRequirements:
+          - metric: LATENCY
+            targetValue: 100
+          - metric: RELIABILITY
+            targetValue: 0.95
+        predictionHorizon: "2024-01-03T12:00:00Z"
+    RouteQosForecastExample:
+      summary: Forecast with one degraded segment
+      value:
+        generatedAt: "2024-01-03T11:00:00Z"
+        validUntil: "2024-01-03T12:00:00Z"
+        segments:
+          - segmentId: "seg-001"
+            startWaypointIndex: 0
+            endWaypointIndex: 1
+            outcome:
+              status: AVAILABLE
+            latencyMs: 45.2
+            throughputMbps: 120.5
+            requirementForecasts:
+              - metric: LATENCY
+                reliabilityScore: 0.97
+              - metric: RELIABILITY
+                reliabilityScore: 0.96
+            confidenceLevel: 0.9
+            confidenceBand: HIGH
+          - segmentId: "seg-002"
+            startWaypointIndex: 1
+            endWaypointIndex: 2
+            outcome:
+              status: AVAILABLE
+            latencyMs: 180.0
+            throughputMbps: 12.0
+            requirementForecasts:
+              - metric: LATENCY
+                reliabilityScore: 0.4
+              - metric: RELIABILITY
+                reliabilityScore: 0.6
+            confidenceLevel: 0.55
+            confidenceBand: MEDIUM
