@@ -1,0 +1,625 @@
+openapi: 3.0.3
+info:
+  title: Route QoS Prediction Subscriptions
+  description: |
+    Explicit subscription and notification API for the Route QoS Prediction API. A subscriber creates a subscription scoped to a route (optionally refined by QoS requirement, specific segments, or an additional geographic area) and receives CloudEvents notifications when a previously-returned forecast changes materially for that route.
+
+    This is a distinct interaction pattern from `POST /retrieve` on the Route QoS Prediction API: that operation is a stateless, one-shot retrieval that returns the forecast directly in its response and creates no resource. This API instead creates a standing subscription resource that delivers ongoing notifications as forecasts change, until the subscription is cancelled or expires.
+
+    # Event types
+
+    * `qos-degradation-forecast` - a subscribed segment's forecast has degraded relative to a declared QoS requirement.
+    * `qos-recovery-forecast` - a subscribed segment's forecast has recovered relative to a declared QoS requirement.
+    * `prediction-expired` - the forecast's `validUntil` has passed without a superseding forecast; the subscriber should treat the segment's last known forecast as stale.
+
+    # Filtering and anti-spam
+
+    `subscriptionDetail.route` is mandatory and scopes the subscription to a specific route. `qosRequirements` optionally define the thresholds a degradation/recovery event is measured against. `segmentIds` optionally restricts notifications to a subset of the route's segments; for long routes this is the primary anti-spam mechanism, since without it a subscriber would receive events for every segment. `area` optionally adds a circular geofence as a further refinement.
+
+    <!-- CAMARA:MANDATORY:authorization-and-authentication:BEGIN -->
+
+    # Authorization and authentication
+
+    The "Camara Security and Interoperability Profile" provides details of how an API consumer requests an access token. Please refer to Identity and Consent Management (https://github.com/camaraproject/IdentityAndConsentManagement/) for the released version of the profile.
+
+    The specific authorization flows to be used will be agreed upon during the onboarding process, happening between the API consumer and the API provider, taking into account the declared purpose for accessing the API, whilst also being subject to the prevailing legal framework dictated by local legislation.
+
+    In cases where personal data is processed by the API and users can exercise their rights through mechanisms such as opt-in and/or opt-out, the use of three-legged access tokens is mandatory. This ensures that the API remains in compliance with privacy regulations, upholding the principles of transparency and user-centric privacy-by-design.
+    <!-- CAMARA:MANDATORY:authorization-and-authentication:END -->
+
+    <!-- CAMARA:MANDATORY:additional-error-responses:BEGIN -->
+
+    # Additional CAMARA error responses
+
+    The list of error codes in this API specification is not exhaustive. Therefore the API specification MAY not document some non-mandatory error statuses as indicated in `CAMARA API Design Guide`.
+
+    Please refer to the `CAMARA_common.yaml` of the Commonalities Release associated to this API version for a complete list of error responses. The applicable Commonalities Release can be identified from the `x-camara-commonalities` field, the changelog and the metadata of the released API version.
+
+    As a specific rule, error `501 - NOT_IMPLEMENTED` can be only a possible error response if it is explicitly documented in the API.
+    <!-- CAMARA:MANDATORY:additional-error-responses:END -->
+
+    <!-- CAMARA:MANDATORY:request-body-strictness:BEGIN -->
+
+    # Request body strictness
+
+    This API rejects requests with JSON request bodies that contain properties not declared in this specification, at any nesting level. Unknown properties result in a `400 INVALID_ARGUMENT` response.
+    <!-- CAMARA:MANDATORY:request-body-strictness:END -->
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  version: wip
+  x-camara-commonalities: 0.9.0
+externalDocs:
+  description: Product documentation at CAMARA
+  url: https://github.com/camaraproject/PredictiveConnectivityData
+servers:
+  - url: "{apiRoot}/route-qos-prediction-subscriptions/vwip"
+    variables:
+      apiRoot:
+        default: http://localhost:9091
+        description: API root, defined by the service provider, e.g. `api.example.com` or `api.example.com/somepath`
+tags:
+  - name: Route QoS Prediction Subscriptions
+    description: Create, retrieve and delete route QoS forecast-change subscriptions.
+
+paths:
+  /subscriptions:
+    post:
+      tags:
+        - Route QoS Prediction Subscriptions
+      summary: Create a route QoS forecast-change subscription
+      description: Create a subscription to forecast-change events for a planned route.
+      operationId: createRouteQosPredictionSubscription
+      parameters:
+        - $ref: "../common/CAMARA_common.yaml#/components/parameters/x-correlator"
+      security:
+        - openId:
+            - route-qos-prediction-subscriptions:org.camaraproject.route-qos-prediction-subscriptions.v0.qos-degradation-forecast:create
+            - route-qos-prediction-subscriptions:org.camaraproject.route-qos-prediction-subscriptions.v0.qos-recovery-forecast:create
+            - route-qos-prediction-subscriptions:org.camaraproject.route-qos-prediction-subscriptions.v0.prediction-expired:create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionRequest"
+            examples:
+              SubscriptionRequestExample:
+                $ref: "#/components/examples/SubscriptionRequestExample"
+        required: true
+      callbacks:
+        notifications:
+          "{$request.body#/sink}":
+            post:
+              summary: notifications callback
+              description: |
+                Important: this endpoint is to be implemented by the API consumer.
+                The server calls this endpoint whenever a route QoS forecast-change
+                or subscription lifecycle event occurs.
+              operationId: postNotification
+              parameters:
+                - $ref: "../common/CAMARA_common.yaml#/components/parameters/x-correlator"
+              requestBody:
+                required: true
+                content:
+                  application/cloudevents+json:
+                    schema:
+                      $ref: "#/components/schemas/NotificationEvent"
+              responses:
+                "204":
+                  description: Successful notification
+                  headers:
+                    x-correlator:
+                      $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
+                "400":
+                  $ref: "../common/CAMARA_common.yaml#/components/responses/BadRequest400"
+                "401":
+                  $ref: "../common/CAMARA_common.yaml#/components/responses/Unauthenticated401"
+                "403":
+                  $ref: "../common/CAMARA_common.yaml#/components/responses/PermissionDenied403"
+                "410":
+                  $ref: "../common/CAMARA_event_common.yaml#/components/responses/SinkGone410"
+                "429":
+                  $ref: "../common/CAMARA_common.yaml#/components/responses/TooManyRequests429"
+              security:
+                - {}
+                - notificationsBearerAuth: []
+      responses:
+        "201":
+          description: Created
+          headers:
+            x-correlator:
+              $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        "202":
+          description: Request accepted to be processed. It applies for async creation process.
+          headers:
+            x-correlator:
+              $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionAsync"
+        "400":
+          $ref: "../common/CAMARA_event_common.yaml#/components/responses/CreateSubscriptionBadRequest400"
+        "401":
+          $ref: "../common/CAMARA_common.yaml#/components/responses/Unauthenticated401"
+        "403":
+          $ref: "../common/CAMARA_event_common.yaml#/components/responses/SubscriptionPermissionDenied403"
+        "409":
+          $ref: "../common/CAMARA_event_common.yaml#/components/responses/CreateSubscriptionConflict409"
+        "422":
+          $ref: "../common/CAMARA_event_common.yaml#/components/responses/CreateSubscriptionDevice422"
+        "429":
+          $ref: "../common/CAMARA_common.yaml#/components/responses/TooManyRequests429"
+    get:
+      tags:
+        - Route QoS Prediction Subscriptions
+      summary: Retrieve a list of route QoS forecast-change subscriptions
+      description: Retrieve the forecast-change subscriptions owned by the caller.
+      operationId: listRouteQosPredictionSubscriptions
+      parameters:
+        - $ref: "../common/CAMARA_common.yaml#/components/parameters/x-correlator"
+        - $ref: "../common/CAMARA_common.yaml#/components/parameters/page"
+        - $ref: "../common/CAMARA_common.yaml#/components/parameters/perPage"
+      security:
+        - openId:
+            - route-qos-prediction-subscriptions:read
+      responses:
+        "200":
+          description: List of event subscription details
+          headers:
+            x-correlator:
+              $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
+            X-Total-Count:
+              $ref: "../common/CAMARA_common.yaml#/components/headers/x-total-count"
+            X-Total-Pages:
+              $ref: "../common/CAMARA_common.yaml#/components/headers/x-total-pages"
+            Link:
+              $ref: "../common/CAMARA_common.yaml#/components/headers/link"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionList"
+        "400":
+          $ref: "../common/CAMARA_common.yaml#/components/responses/BadRequest400"
+        "401":
+          $ref: "../common/CAMARA_common.yaml#/components/responses/Unauthenticated401"
+        "403":
+          $ref: "../common/CAMARA_common.yaml#/components/responses/PermissionDenied403"
+  /subscriptions/{subscriptionId}:
+    get:
+      tags:
+        - Route QoS Prediction Subscriptions
+      summary: Retrieve a route QoS forecast-change subscription
+      description: Retrieve a forecast-change subscription by its identifier.
+      operationId: retrieveRouteQosPredictionSubscription
+      security:
+        - openId:
+            - route-qos-prediction-subscriptions:read
+      parameters:
+        - $ref: "#/components/parameters/SubscriptionId"
+        - $ref: "../common/CAMARA_common.yaml#/components/parameters/x-correlator"
+      responses:
+        "200":
+          description: OK
+          headers:
+            x-correlator:
+              $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        "400":
+          $ref: "../common/CAMARA_event_common.yaml#/components/responses/SubscriptionIdRequired400"
+        "401":
+          $ref: "../common/CAMARA_common.yaml#/components/responses/Unauthenticated401"
+        "403":
+          $ref: "../common/CAMARA_common.yaml#/components/responses/PermissionDenied403"
+        "404":
+          $ref: "../common/CAMARA_common.yaml#/components/responses/NotFound404"
+    delete:
+      tags:
+        - Route QoS Prediction Subscriptions
+      summary: Delete a route QoS forecast-change subscription
+      operationId: deleteRouteQosPredictionSubscription
+      description: Cancel a forecast-change subscription and stop further notifications.
+      security:
+        - openId:
+            - route-qos-prediction-subscriptions:delete
+      parameters:
+        - $ref: "#/components/parameters/SubscriptionId"
+        - $ref: "../common/CAMARA_common.yaml#/components/parameters/x-correlator"
+      responses:
+        "204":
+          description: Subscription deleted
+          headers:
+            x-correlator:
+              $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
+        "202":
+          description: Request accepted to be processed. It applies for async deletion process.
+          headers:
+            x-correlator:
+              $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionAsync"
+        "400":
+          $ref: "../common/CAMARA_event_common.yaml#/components/responses/SubscriptionIdRequired400"
+        "401":
+          $ref: "../common/CAMARA_common.yaml#/components/responses/Unauthenticated401"
+        "403":
+          $ref: "../common/CAMARA_common.yaml#/components/responses/PermissionDenied403"
+        "404":
+          $ref: "../common/CAMARA_common.yaml#/components/responses/NotFound404"
+
+components:
+  securitySchemes:
+    openId:
+      $ref: "../common/CAMARA_common.yaml#/components/securitySchemes/openId"
+    notificationsBearerAuth:
+      $ref: "../common/CAMARA_event_common.yaml#/components/securitySchemes/notificationsBearerAuth"
+
+  parameters:
+    SubscriptionId:
+      name: subscriptionId
+      in: path
+      description: Subscription identifier that was obtained from the create subscription operation
+      required: true
+      schema:
+        $ref: "../common/CAMARA_event_common.yaml#/components/schemas/SubscriptionId"
+
+  schemas:
+    SubscriptionRequest:
+      description: The request for creating a route QoS forecast-change event subscription.
+      type: object
+      required:
+        - sink
+        - protocol
+        - config
+        - types
+      properties:
+        protocol:
+          $ref: "../common/CAMARA_event_common.yaml#/components/schemas/Protocol"
+        sink:
+          description: The address to which events shall be delivered using the selected protocol.
+          allOf:
+            - $ref: "../common/CAMARA_event_common.yaml#/components/schemas/Sink"
+        sinkCredential:
+          $ref: "../common/CAMARA_event_common.yaml#/components/schemas/SinkCredential"
+        types:
+          description: |
+            Event types eligible to be delivered by this subscription. A subscriber
+            may request one or more of the three Route QoS Prediction event types
+            in a single subscription.
+          type: array
+          minItems: 1
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/ApiEventType"
+        config:
+          $ref: "#/components/schemas/Config"
+      discriminator:
+        propertyName: protocol
+        mapping:
+          HTTP: "#/components/schemas/HTTPSubscriptionRequest"
+
+    Subscription:
+      description: Represents a route QoS forecast-change subscription.
+      type: object
+      required:
+        - sink
+        - protocol
+        - config
+        - types
+        - id
+      properties:
+        protocol:
+          $ref: "../common/CAMARA_event_common.yaml#/components/schemas/Protocol"
+        sink:
+          description: The address to which events shall be delivered using the selected protocol.
+          allOf:
+            - $ref: "../common/CAMARA_event_common.yaml#/components/schemas/Sink"
+        sinkCredential:
+          $ref: "../common/CAMARA_event_common.yaml#/components/schemas/SinkCredential"
+        types:
+          description: Event types eligible to be delivered by this subscription.
+          type: array
+          minItems: 1
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/ApiEventType"
+        config:
+          $ref: "#/components/schemas/Config"
+        id:
+          $ref: "../common/CAMARA_event_common.yaml#/components/schemas/SubscriptionId"
+        startsAt:
+          $ref: "../common/CAMARA_common.yaml#/components/schemas/DateTime"
+        expiresAt:
+          $ref: "../common/CAMARA_common.yaml#/components/schemas/DateTime"
+        status:
+          type: string
+          description: |-
+            Current status of the subscription. Details:
+              - `ACTIVATION_REQUESTED`: Subscription creation (POST) is triggered but subscription creation process is not finished yet.
+              - `ACTIVE`: Subscription creation process is completed. Subscription is fully operative.
+              - `INACTIVE`: Subscription is temporarily inactive, but its workflow logic is not deleted.
+              - `EXPIRED`: Subscription is ended (no longer active) because it reached its expiry time or event count.
+              - `DELETED`: Subscription is ended as deleted (no longer active).
+          enum:
+            - ACTIVATION_REQUESTED
+            - ACTIVE
+            - EXPIRED
+            - INACTIVE
+            - DELETED
+      discriminator:
+        propertyName: protocol
+        mapping:
+          HTTP: "#/components/schemas/HTTPSubscriptionResponse"
+
+    SubscriptionAsync:
+      description: Response for a subscription request managed asynchronously (creation or deletion).
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          $ref: "../common/CAMARA_event_common.yaml#/components/schemas/SubscriptionId"
+
+    SubscriptionList:
+      description: Response with subscriptions list.
+      type: object
+      required:
+        - subscriptions
+        - pagination
+      properties:
+        subscriptions:
+          description: Subscriptions list.
+          type: array
+          minItems: 0
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/Subscription"
+        pagination:
+          $ref: "../common/CAMARA_common.yaml#/components/schemas/Pagination"
+
+    Config:
+      description: |
+        Implementation-specific configuration parameters needed by the
+        subscription manager for acquiring events. Extends `ConfigBase` from
+        `CAMARA_event_common.yaml` with the required `subscriptionDetail`
+        property and the optional `initialEvent` property.
+      allOf:
+        - $ref: "../common/CAMARA_event_common.yaml#/components/schemas/ConfigBase"
+        - type: object
+          required:
+            - subscriptionDetail
+          properties:
+            subscriptionDetail:
+              $ref: "#/components/schemas/SubscriptionDetail"
+            initialEvent:
+              type: boolean
+              description: If `true`, an initial event is sent reflecting the current forecast state as soon as the subscription is created.
+
+    SubscriptionDetail:
+      description: |
+        Filtering scope for the subscription. Route-based scoping is mandatory
+        via `route`; QoS requirement, segment and area scoping are optional
+        refinements. `segmentIds` is the primary anti-spam mechanism for long
+        routes: without it, a subscriber receives events for every segment.
+      type: object
+      required:
+        - route
+      properties:
+        route:
+          $ref: "../route-qos-prediction.yaml#/components/schemas/Route"
+        qosRequirements:
+          type: array
+          description: |
+            Optional QoS requirements that define what a forecast change is
+            measured against (for example the threshold a degradation event
+            fires below).
+          items:
+            $ref: "../route-qos-prediction.yaml#/components/schemas/QosRequirement"
+        segmentIds:
+          type: array
+          description: Optional subset of segment identifiers to receive events for.
+          items:
+            type: string
+        area:
+          $ref: "../common/CAMARA_common.yaml#/components/schemas/Circle"
+
+    ApiEventType:
+      type: string
+      description: |
+        Enum of Route QoS Prediction event type strings. The reverse-DNS prefix
+        `org.camaraproject.route-qos-prediction-subscriptions` makes each value
+        globally unique.
+      enum:
+        - org.camaraproject.route-qos-prediction-subscriptions.v0.qos-degradation-forecast
+        - org.camaraproject.route-qos-prediction-subscriptions.v0.qos-recovery-forecast
+        - org.camaraproject.route-qos-prediction-subscriptions.v0.prediction-expired
+
+    SubscriptionLifecycleEvent:
+      description: |
+        Subscription lifecycle event group, common to all CAMARA APIs that
+        support explicit subscriptions. Extends the CloudEvents envelope and
+        constrains `type` to the set of lifecycle event types managed by
+        Commonalities.
+      allOf:
+        - $ref: "../common/CAMARA_event_common.yaml#/components/schemas/CloudEvent"
+        - type: object
+          properties:
+            type:
+              $ref: "#/components/schemas/SubscriptionLifecycleEventType"
+      discriminator:
+        propertyName: type
+        mapping:
+          org.camaraproject.route-qos-prediction-subscriptions.v0.subscription-started: "#/components/schemas/EventSubscriptionStarted"
+          org.camaraproject.route-qos-prediction-subscriptions.v0.subscription-updated: "#/components/schemas/EventSubscriptionUpdated"
+          org.camaraproject.route-qos-prediction-subscriptions.v0.subscription-ended: "#/components/schemas/EventSubscriptionEnded"
+
+    SubscriptionLifecycleEventType:
+      type: string
+      description: Enum of subscription lifecycle event type strings, managed by Commonalities.
+      enum:
+        - org.camaraproject.route-qos-prediction-subscriptions.v0.subscription-started
+        - org.camaraproject.route-qos-prediction-subscriptions.v0.subscription-updated
+        - org.camaraproject.route-qos-prediction-subscriptions.v0.subscription-ended
+
+    ApiNotificationEvent:
+      description: |
+        Route QoS Prediction notification event group. Extends the CloudEvents
+        envelope and constrains `type` to this API's own event types.
+      allOf:
+        - $ref: "../common/CAMARA_event_common.yaml#/components/schemas/CloudEvent"
+        - type: object
+          properties:
+            type:
+              $ref: "#/components/schemas/ApiEventType"
+      discriminator:
+        propertyName: "type"
+        mapping:
+          org.camaraproject.route-qos-prediction-subscriptions.v0.qos-degradation-forecast: "#/components/schemas/EventQosDegradationForecast"
+          org.camaraproject.route-qos-prediction-subscriptions.v0.qos-recovery-forecast: "#/components/schemas/EventQosRecoveryForecast"
+          org.camaraproject.route-qos-prediction-subscriptions.v0.prediction-expired: "#/components/schemas/EventPredictionExpired"
+
+    NotificationEvent:
+      description: Union of all valid notification event groups at the callback endpoint.
+      oneOf:
+        - $ref: "#/components/schemas/ApiNotificationEvent"
+        - $ref: "#/components/schemas/SubscriptionLifecycleEvent"
+
+    EventQosDegradationForecast:
+      description: A subscribed segment's forecast has degraded relative to a declared QoS requirement.
+      allOf:
+        - $ref: "#/components/schemas/ApiNotificationEvent"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/ForecastChangeEventData"
+
+    EventQosRecoveryForecast:
+      description: A subscribed segment's forecast has recovered relative to a declared QoS requirement.
+      allOf:
+        - $ref: "#/components/schemas/ApiNotificationEvent"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/ForecastChangeEventData"
+
+    EventPredictionExpired:
+      description: A subscribed segment's forecast has passed its `validUntil` time without a superseding forecast.
+      allOf:
+        - $ref: "#/components/schemas/ApiNotificationEvent"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/ForecastChangeEventData"
+
+    ForecastChangeEventData:
+      description: Detail payload shared by the three Route QoS Prediction event types.
+      type: object
+      required:
+        - subscriptionId
+        - segmentId
+      properties:
+        subscriptionId:
+          $ref: "../common/CAMARA_event_common.yaml#/components/schemas/SubscriptionId"
+        segmentId:
+          type: string
+          description: The route segment the event relates to.
+        location:
+          $ref: "../common/CAMARA_common.yaml#/components/schemas/Point"
+        latencyMs:
+          type: number
+          format: float
+          nullable: true
+          minimum: 0
+          description: Predicted latency associated with the event, if applicable.
+        confidenceLevel:
+          type: number
+          format: float
+          nullable: true
+          minimum: 0
+          maximum: 1
+          description: Model confidence in the forecast that triggered the event.
+        expectedAt:
+          type: string
+          format: date-time
+          description: Time at which the reported forecast is expected to apply.
+
+    EventSubscriptionStarted:
+      description: Event structure for subscription started event.
+      allOf:
+        - $ref: "#/components/schemas/SubscriptionLifecycleEvent"
+        - type: object
+          properties:
+            data:
+              $ref: "../common/CAMARA_event_common.yaml#/components/schemas/SubscriptionStarted"
+
+    EventSubscriptionUpdated:
+      description: Event structure for subscription updated event.
+      allOf:
+        - $ref: "#/components/schemas/SubscriptionLifecycleEvent"
+        - type: object
+          properties:
+            data:
+              $ref: "../common/CAMARA_event_common.yaml#/components/schemas/SubscriptionUpdated"
+
+    EventSubscriptionEnded:
+      description: Event structure for subscription ended event.
+      allOf:
+        - $ref: "#/components/schemas/SubscriptionLifecycleEvent"
+        - type: object
+          properties:
+            data:
+              $ref: "../common/CAMARA_event_common.yaml#/components/schemas/SubscriptionEnded"
+
+    HTTPSubscriptionRequest:
+      description: Subscription request for HTTP-based event delivery.
+      allOf:
+        - $ref: "#/components/schemas/SubscriptionRequest"
+        - type: object
+          properties:
+            protocolSettings:
+              $ref: "../common/CAMARA_event_common.yaml#/components/schemas/HTTPSettings"
+
+    HTTPSubscriptionResponse:
+      description: Subscription resource returned for HTTP-based event delivery.
+      allOf:
+        - $ref: "#/components/schemas/Subscription"
+        - type: object
+          properties:
+            protocolSettings:
+              $ref: "../common/CAMARA_event_common.yaml#/components/schemas/HTTPSettings"
+  examples:
+    SubscriptionRequestExample:
+      summary: Subscribe to degradation and recovery events for two segments of a route
+      value:
+        protocol: HTTP
+        sink: "https://application-server.com/notifications"
+        types:
+          - org.camaraproject.route-qos-prediction-subscriptions.v0.qos-degradation-forecast
+          - org.camaraproject.route-qos-prediction-subscriptions.v0.qos-recovery-forecast
+        config:
+          subscriptionDetail:
+            route:
+              waypoints:
+                - latitude: 50.735851
+                  longitude: 7.10066
+                - latitude: 50.74
+                  longitude: 7.11
+                - latitude: 50.73
+                  longitude: 7.12
+            qosRequirements:
+              - metric: LATENCY
+                targetValue: 100
+            segmentIds:
+              - "seg-001"
+              - "seg-002"
+          subscriptionExpireTime: "2024-01-04T11:00:00Z"
+          initialEvent: false
