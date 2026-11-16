@@ -2,7 +2,7 @@ repository:
   repository_name: PredictiveConnectivityData
   release_tag: r2.3
   release_type: public-release
-  release_date: null
+  release_date: '2026-11-16T12:53:45Z'
   src_commit_sha: 41506eaea1a5a9cd5c9751cde7468ce606f99d0a
 apis:
 - api_name: predictive-connectivity-data
