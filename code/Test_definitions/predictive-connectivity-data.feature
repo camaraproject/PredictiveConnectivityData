@@ -206,7 +206,8 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" has only 1 item, corresponding to the layer containing the requested height
     And the response property "$.requestedHeight" is equal to the request property "$.height"
 
-  # If signal strength is not supported by the implementation this scenario will not apply. Therefore the request body property "$.includeSignalStrength" will be ignored and only connectivity quality will be returned.
+  # This scenario applies only if signal strength is supported by the implementation.
+  # If it is not supported, see scenario predictive_connectivity_data_16_include_signal_strength_not_supported.
   @predictive_connectivity_data_12_include_signal_strength
   Scenario: Validate success response for a request including signal strength
     Given the request body property "$.area" is set to a valid testing area within supported regions
@@ -259,6 +260,63 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the request with the response body will be received at the address of the request property "$.sink" with property "$.operationId" equal to response property "$.operationId"
     And the request will have header "Authorization" set to "Bearer " + an access token requested to the request property "$.sinkCredential.tokenUri" with the request property "$.sinkCredential.clientId"
     And the request body complies with the OAS schema at "/components/schemas/ConnectivityDataAsyncResponse"
+
+  # Signal strength scenarios
+  # The API consumer knows whether it requested signal strength, so the behaviours are:
+  # - not requested (false or not included): "$.layerSignalStrengths" is never included
+  # - requested and supported: "$.layerSignalStrengths" is included with the same length as "$.layerConnectivities" (null items where no data is available)
+  # - requested but not supported: the request is not rejected, and "$.layerSignalStrengths" is not included
+
+  @predictive_connectivity_data_15_include_signal_strength_false
+  Scenario: Validate success response for a request not requesting signal strength
+    Given the request body property "$.area" is set to a valid testing area within supported regions
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
+    And the request body property "$.serviceLevel" is set to a valid communication service level
+    And the request body property "$.includeSignalStrength" is not present or is set to false
+    When the request "retrieveConnectivity" is sent
+    Then the response status code is 200
+    And the response header "Content-Type" is "application/json"
+    And the response header "x-correlator" has same value as the request header "x-correlator"
+    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response property "$.status" value is "SUPPORTED_AREA"
+    And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" is not empty
+    And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerSignalStrengths" is not included in the response
+
+  # This scenario applies only if signal strength is NOT supported by the implementation.
+  @predictive_connectivity_data_16_include_signal_strength_not_supported
+  Scenario: Validate success response for a request including signal strength when it is not supported by the implementation
+    Given signal strength is not supported by the API provider
+    And the request body property "$.area" is set to a valid testing area within supported regions
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
+    And the request body property "$.serviceLevel" is set to a valid communication service level
+    And the request body property "$.includeSignalStrength" is set to true
+    When the request "retrieveConnectivity" is sent
+    Then the response status code is 200
+    And the response header "Content-Type" is "application/json"
+    And the response header "x-correlator" has same value as the request header "x-correlator"
+    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response property "$.status" value is "SUPPORTED_AREA"
+    And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" is not empty
+    And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerSignalStrengths" is not included in the response
+
+  # This scenario applies only if signal strength is supported by the implementation.
+  @predictive_connectivity_data_17_include_signal_strength_partial_data
+  Scenario: Validate success response for a request including signal strength when part of the signal strength data is not available
+    Given signal strength is supported by the API provider
+    And the request body property "$.area" is set to a valid testing POLYGON area partially within the supported regions
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
+    And the request body property "$.serviceLevel" is set to a valid communication service level
+    And the request body property "$.includeSignalStrength" is set to true
+    When the request "retrieveConnectivity" is sent
+    Then the response status code is 200
+    And the response header "Content-Type" is "application/json"
+    And the response header "x-correlator" has same value as the request header "x-correlator"
+    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response property "$.status" value is "PART_OF_AREA_NOT_SUPPORTED"
+    And the response property "$.timedConnectivityData[*].cellConnectivityData[*]" have properties "layerConnectivities[*]" and "layerSignalStrengths[*]" having the same length
+    And there is at least one item in response property "$.timedConnectivityData[*].cellConnectivityData[*]"
+    And that item has the array property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" containing only "ND" values
+    And that item has the array property "$.timedConnectivityData[*].cellConnectivityData[*].layerSignalStrengths[*]" containing only null values
 
   # Error scenarios
 
