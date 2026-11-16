@@ -268,11 +268,11 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
   # - requested but not supported: the request is not rejected, and "$.layerSignalStrengths" is not included
 
   @predictive_connectivity_data_15_include_signal_strength_false
-  Scenario: Validate success response for a request explicitly not including signal strength
+  Scenario: Validate success response for a request not requesting signal strength
     Given the request body property "$.area" is set to a valid testing area within supported regions
     And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
     And the request body property "$.serviceLevel" is set to a valid communication service level
-    And the request body property "$.includeSignalStrength" is set to false
+    And the request body property "$.includeSignalStrength" is not present or is set to false
     When the request "retrieveConnectivity" is sent
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
