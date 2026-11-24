@@ -28,7 +28,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the resource "/predictive-connectivity-data/vwip/retrieve"
     And the header "Content-Type" is set to "application/json"
     And the header "Authorization" is set to a valid access token
-    And the header "x-correlator" complies with the schema at "/components/schemas/XCorrelator"
+    And the header "x-correlator" complies with the schema at "#/components/schemas/XCorrelator"
     And the request body is set by default to a request body compliant with the schema
 
   # Happy path scenarios
@@ -42,7 +42,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response body complies with the OAS schema at "#/components/schemas/ConnectivityDataResponse"
     And the response property "$.status" value is "SUPPORTED_AREA"
     And the response property "$.timedConnectivityData" intervals fully cover the requested time range from "$.startTime" to "$.endTime"
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].geohash" is a valid Geohash inside the request area
@@ -58,7 +58,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response body complies with the OAS schema at "#/components/schemas/ConnectivityDataResponse"
     And the response property "$.status" value is "PART_OF_AREA_NOT_SUPPORTED"
     And the response property "$.timedConnectivityData" intervals fully cover the requested time range from "$.startTime" to "$.endTime"
     And there is at least one item in response property "$.timedConnectivityData[*].cellConnectivityData[*]"
@@ -75,7 +75,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response body complies with the OAS schema at "#/components/schemas/ConnectivityDataResponse"
     And the response property "$.status" value is "AREA_NOT_SUPPORTED"
     And the response property "$.timedConnectivityData" is an empty array
 
@@ -90,7 +90,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response body complies with the OAS schema at "#/components/schemas/ConnectivityDataResponse"
     And the response property "$.status" value is "SUPPORTED_AREA"
     And the response property "$.timedConnectivityData" intervals fully cover the requested time range from "$.startTime" to "$.endTime"
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*]" contains one cell per geohash in the request property "$.area.geohashes"
@@ -109,7 +109,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response body complies with the OAS schema at "#/components/schemas/ConnectivityDataResponse"
     And the response property "$.status" value is "PART_OF_AREA_NOT_SUPPORTED"
     And the response property "$.timedConnectivityData" intervals fully cover the requested time range from "$.startTime" to "$.endTime"
     And there is at least one item in response property "$.timedConnectivityData[*].cellConnectivityData[*]"
@@ -128,7 +128,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response body complies with the OAS schema at "#/components/schemas/ConnectivityDataResponse"
     And the response property "$.status" value is "AREA_NOT_SUPPORTED"
     And the response property "$.timedConnectivityData" is an empty array
 
@@ -147,7 +147,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response includes property "$.operationId"
     And the request with the response body will be received at the address of the request property "$.sink" with property "$.operationId" equal to response property "$.operationId"
     And the request will have header "Authorization" set to "Bearer " + the value of the request property "$.sinkCredential.accessToken"
-    And the request body complies with the OAS schema at "/components/schemas/ConnectivityDataAsyncResponse"
+    And the request body complies with the OAS schema at "#/components/schemas/ConnectivityDataAsyncResponse"
 
   @predictive_connectivity_data_08_async_operation_not_completed_scenario
   Scenario: Validate async callback when operation fails
@@ -165,7 +165,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And there has been a problem processing the request asynchronously
     And the request with the response body will be received at the address of the request property "$.sink" with property "$.operationId" equal to response property "$.operationId"
     And the request will have header "Authorization" set to "Bearer " + the value of the request property "$.sinkCredential.accessToken"
-    And the request body complies with the OAS schema at "/components/schemas/ConnectivityDataAsyncResponse"
+    And the request body complies with the OAS schema at "#/components/schemas/ConnectivityDataAsyncResponse"
     And the request body will have property "$.status" equal to "OPERATION_NOT_COMPLETED" and includes property "$.statusInfo"
 
   @predictive_connectivity_data_09_custom_precision_success_scenario
@@ -178,7 +178,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response body complies with the OAS schema at "#/components/schemas/ConnectivityDataResponse"
 
   @predictive_connectivity_data_10_concrete_network_type_success_scenario
   Scenario: Validate success response for a request specifying the network type for which the connectivity data is to be obtained
@@ -190,7 +190,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response body complies with the OAS schema at "#/components/schemas/ConnectivityDataResponse"
 
   @predictive_connectivity_data_11_concrete_height_success_scenario
   Scenario: Validate success response for a request specifying the height for which the connectivity data is to be obtained
@@ -202,7 +202,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response body complies with the OAS schema at "#/components/schemas/ConnectivityDataResponse"
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" has only 1 item, corresponding to the layer containing the requested height
     And the response property "$.requestedHeight" is equal to the request property "$.height"
 
@@ -218,7 +218,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response body complies with the OAS schema at "#/components/schemas/ConnectivityDataResponse"
     And the response property "$.status" value is "SUPPORTED_AREA"
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" is not empty
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*]" have properties "layerConnectivities[*]" and "layerSignalStrengths[*]" having the same length
@@ -232,7 +232,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response body complies with the OAS schema at "#/components/schemas/ConnectivityDataResponse"
     And the response property "$.status" value is "SUPPORTED_AREA"
     And the response property "$.timedConnectivityData" intervals fully cover the requested time range from "$.startTime" to "$.endTime"
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].geohash" is a valid Geohash inside the request area
@@ -259,7 +259,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response does not include property "$.sinkCredential"
     And the request with the response body will be received at the address of the request property "$.sink" with property "$.operationId" equal to response property "$.operationId"
     And the request will have header "Authorization" set to "Bearer " + an access token requested to the request property "$.sinkCredential.tokenUri" with the request property "$.sinkCredential.clientId"
-    And the request body complies with the OAS schema at "/components/schemas/ConnectivityDataAsyncResponse"
+    And the request body complies with the OAS schema at "#/components/schemas/ConnectivityDataAsyncResponse"
 
   # Signal strength scenarios
   # The API consumer knows whether it requested signal strength, so the behaviours are:
@@ -277,7 +277,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response body complies with the OAS schema at "#/components/schemas/ConnectivityDataResponse"
     And the response property "$.status" value is "SUPPORTED_AREA"
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" is not empty
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerSignalStrengths" is not included in the response
@@ -294,7 +294,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response body complies with the OAS schema at "#/components/schemas/ConnectivityDataResponse"
     And the response property "$.status" value is "SUPPORTED_AREA"
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" is not empty
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*].layerSignalStrengths" is not included in the response
@@ -311,7 +311,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response body complies with the OAS schema at "#/components/schemas/ConnectivityDataResponse"
     And the response property "$.status" value is "PART_OF_AREA_NOT_SUPPORTED"
     And the response property "$.timedConnectivityData[*].cellConnectivityData[*]" have properties "layerConnectivities[*]" and "layerSignalStrengths[*]" having the same length
     And there is at least one item in response property "$.timedConnectivityData[*].cellConnectivityData[*]"
@@ -527,7 +527,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
   @predictive_connectivity_data_400.18_invalid_geohash_format
   Scenario: Error 400 when a geohash in the list does not comply with the Geohash format
     Given the request body property "$.area.areaType" is set to "GEOHASHLIST"
-    And the request body property "$.area.geohashes" contains a value that does not comply with the schema at "/components/schemas/Geohash"
+    And the request body property "$.area.geohashes" contains a value that does not comply with the schema at "#/components/schemas/Geohash"
     When the request "retrieveConnectivity" is sent
     Then the response status code is 400
     And the response header "Content-Type" is "application/json"
@@ -547,7 +547,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
 
   @predictive_connectivity_data_400.20_schema_not_compliant
   Scenario: Error 400 when the request body does not comply with the schema
-    Given the request body is not compliant with the OAS schema at "/components/schemas/RetrieveConnectivityRequest"
+    Given the request body is not compliant with the OAS schema at "#/components/schemas/RetrieveConnectivityRequest"
     When the request "retrieveConnectivity" is sent
     Then the response status code is 400
     And the response header "x-correlator" has same value as the request header "x-correlator"
@@ -592,7 +592,7 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
   # The x-correlator sent in the request is invalid, so the response is not expected to echo it back
   @predictive_connectivity_data_400.24_invalid_x_correlator
   Scenario: Error 400 when the x-correlator header does not comply with the schema
-    Given the request header "x-correlator" is not compliant with the schema at "/components/schemas/XCorrelator"
+    Given the request header "x-correlator" is not compliant with the schema at "#/components/schemas/XCorrelator"
     When the request "retrieveConnectivity" is sent
     Then the response status code is 400
     And the response header "Content-Type" is "application/json"
