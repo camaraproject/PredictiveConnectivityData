@@ -318,6 +318,60 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And that item has the array property "$.timedConnectivityData[*].cellConnectivityData[*].layerConnectivities[*]" containing only "ND" values
     And that item has the array property "$.timedConnectivityData[*].cellConnectivityData[*].layerSignalStrengths[*]" containing only null values
 
+  @predictive_connectivity_data_18_route_supported_area_success_scenario
+  Scenario: Validate success response for a supported route request
+    Given the request body property "$.area.areaType" is set to "ROUTE"
+    And the request body property "$.area.waypoints" is set to a list of valid waypoints wholly within the supported regions
+    And the request body property "$.precision" is not included
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
+    And the request body property "$.serviceLevel" is set to a valid communication service level
+    When the request "retrieveConnectivity" is sent
+    Then the response status code is 200
+    And the response header "Content-Type" is "application/json"
+    And the response header "x-correlator" has same value as the request header "x-correlator"
+    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response property "$.status" value is "SUPPORTED_AREA"
+    And the response property "$.timedConnectivityData" intervals fully cover the requested time range from "$.startTime" to "$.endTime"
+    And the response property "$.timedConnectivityData[*].segmentConnectivityData[*]" contains one segment per pair of consecutive waypoints in the request property "$.area.waypoints"
+    And the response property "$.timedConnectivityData[*].segmentConnectivityData[*].segmentId" is consistent with its "startWaypointIndex" and "endWaypointIndex" in the format "seg-{startWaypointIndex}-{endWaypointIndex}"
+    And all the items in response property "$.timedConnectivityData[*].segmentConnectivityData[*].layerConnectivities[*]" are equal to "GC", "MC" or "NC"
+    And the response property "$.timedConnectivityData[*].segmentConnectivityData[*].layerSignalStrengths" is not included in the response
+    And the response property "$.timedConnectivityData[*].cellConnectivityData" is not included in the response
+
+  @predictive_connectivity_data_19_route_partial_area_success_scenario
+  Scenario: Validate success response for a route partially within the supported regions
+    Given the request body property "$.area.areaType" is set to "ROUTE"
+    And the request body property "$.area.waypoints" is set to a list of valid waypoints partially within the supported regions
+    And the request body property "$.precision" is not included
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
+    And the request body property "$.serviceLevel" is set to a valid communication service level
+    When the request "retrieveConnectivity" is sent
+    Then the response status code is 200
+    And the response header "Content-Type" is "application/json"
+    And the response header "x-correlator" has same value as the request header "x-correlator"
+    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response property "$.status" value is "PART_OF_AREA_NOT_SUPPORTED"
+    And the response property "$.timedConnectivityData" intervals fully cover the requested time range from "$.startTime" to "$.endTime"
+    And there is at least one item in response property "$.timedConnectivityData[*].segmentConnectivityData[*]"
+    And that item has the array property "$.timedConnectivityData[*].segmentConnectivityData[*].layerConnectivities[*]" containing only "ND" values
+    And the response property "$.timedConnectivityData[*].segmentConnectivityData[*].layerConnectivities" is not empty
+    And the response property "$.timedConnectivityData[*].segmentConnectivityData[*].layerSignalStrengths" is not included in the response
+
+  @predictive_connectivity_data_20_route_not_supported_area_success_scenario
+  Scenario: Validate success response for a route entirely outside the supported regions
+    Given the request body property "$.area.areaType" is set to "ROUTE"
+    And the request body property "$.area.waypoints" is set to a list of valid waypoints entirely outside the supported regions
+    And the request body property "$.precision" is not included
+    And the request body properties "$.startTime" and "$.endTime" are valid future date-times, with "$.endTime" later than "$.startTime"
+    And the request body property "$.serviceLevel" is set to a valid communication service level
+    When the request "retrieveConnectivity" is sent
+    Then the response status code is 200
+    And the response header "Content-Type" is "application/json"
+    And the response header "x-correlator" has same value as the request header "x-correlator"
+    And the response body complies with the OAS schema at "/components/schemas/ConnectivityDataResponse"
+    And the response property "$.status" value is "AREA_NOT_SUPPORTED"
+    And the response property "$.timedConnectivityData" is an empty array
+
   # Error scenarios
 
   # Error 400 scenarios
@@ -600,6 +654,18 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
     And the response property "$.code" is "INVALID_ARGUMENT"
     And the response property "$.message" contains a user friendly text
 
+  @predictive_connectivity_data_400.25_precision_with_route
+  Scenario: Error 400 when precision is included together with a ROUTE area
+    Given the request body property "$.area.areaType" is set to "ROUTE"
+    And the request body property "$.area.waypoints" is set to a list of valid waypoints within the supported regions
+    And the request body property "$.precision" is included
+    When the request "retrieveConnectivity" is sent
+    Then the response status code is 400
+    And the response header "Content-Type" is "application/json"
+    And the response property "$.status" is 400
+    And the response property "$.code" is "INVALID_ARGUMENT"
+    And the response property "$.message" contains a user friendly text
+
   # Error 401 scenarios
 
   @predictive_connectivity_data_401.01_expired_access_token
@@ -684,6 +750,19 @@ Feature: CAMARA Predictive Connectivity Data API, vwip
   Scenario: Error 422 when the requested areaType is not supported by the implementation
     Given the request body property "$.area.areaType" is set to "GEOHASHLIST"
     And the request body property "$.area.geohashes" is set to a list of valid geohashes within the supported regions
+    And the request body property "$.precision" is not included
+    When the request "retrieveConnectivity" is sent
+    Then the response status code is 422
+    And the response header "Content-Type" is "application/json"
+    And the response property "$.status" is 422
+    And the response property "$.code" is "PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_AREA_TYPE"
+    And the response property "$.message" contains a user friendly text
+
+  @predictive_connectivity_data_422.03b_unsupported_route_area_type
+  #To test this scenario the implementation must not support the ROUTE area type
+  Scenario: Error 422 when the requested areaType is ROUTE and it is not supported by the implementation
+    Given the request body property "$.area.areaType" is set to "ROUTE"
+    And the request body property "$.area.waypoints" is set to a list of valid waypoints within the supported regions
     And the request body property "$.precision" is not included
     When the request "retrieveConnectivity" is sent
     Then the response status code is 422
