@@ -383,7 +383,18 @@ components:
           maximum: 250
         includeSignalStrength:
           type: boolean
-          description: Optional parameter to request raw signal strength values in dBm for each layer. If set to true and supported by the implementation, the response will include signal strength data alongside connectivity quality information. If not supported by the implementation, this parameter will be ignored and only connectivity quality will be returned.
+          description: >-
+            Optional parameter to request raw signal strength values in dBm for each layer.
+            The response behaviour is as follows:
+            - `false` or not included: `layerSignalStrengths` is not included in the response.
+            - `true` and supported by the implementation: `layerSignalStrengths` is included in every
+              cell or route segment of the response, with the same number of items as
+              `layerConnectivities`. Layers for which no signal strength data is available are
+              represented by `null` items.
+            - `true` but not supported by the implementation: the parameter is ignored, no error is
+              returned and `layerSignalStrengths` is not included in the response. Since the API consumer
+              knows it requested signal strength, the absence of `layerSignalStrengths` in that case
+              means the implementation does not support it.
           default: false
         sink:
           description: |
@@ -680,7 +691,20 @@ components:
       type: array
       minItems: 1
       maxItems: 100
-      description: Predicted signal strength values in dBm for each layer. This array is optional and will only be present if the `includeSignalStrength` parameter was set to true in the request and is supported by the implementation. The array follows the same structure as `layerConnectivities`, with each element corresponding to the signal strength in dBm for the same layer index. All layers are considered having the same `layerThickness` meters and are ordered consecutively starting from the ground (First layer starts at 0 meters AGL). A null value indicates no signal strength data is available for that layer. If a specific height was requested, this array will contain only one element corresponding to the signal strength for the layer at that height.
+      description: >-
+        Predicted signal strength values in dBm for each layer. This array is optional
+        and will only be present if the `includeSignalStrength` parameter was set to true
+        in the request and is supported by the implementation. It is never present when
+        `includeSignalStrength` is false or not included. If `includeSignalStrength` was set
+        to true and this array is absent, the implementation does not support signal strength.
+        When present, the array always has the same length as `layerConnectivities`, with each
+        element corresponding to the signal strength in dBm for the same layer index. All layers
+        are considered having the same `layerThickness` meters and are ordered consecutively
+        starting from the ground (First layer starts at 0 meters AGL). A null value indicates no
+        signal strength data is available for that layer; if no data is available for any layer
+        of the cell or route segment (for example when all `layerConnectivities` are `ND`), the
+        array contains only null values.
+        If a specific height was requested, this array will contain only one element corresponding to the signal strength for the layer at that height.
       items:
         type: number
         format: float
