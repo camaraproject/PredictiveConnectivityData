@@ -52,10 +52,10 @@ info:
     **Area Types**
     - **POLYGON**: Area defined by a list of latitude/longitude points forming a simple polygon. The polygon is subdivided into a grid of cells. The set of cells corresponds to the geohashes, at the requested precision, that cover the polygon.
     - **GEOHASHLIST**: Area defined as a list of geohash strings. Geohashes may be individual, non-contiguous geographical areas each with their own (possibly different) precision.
-    - **ROUTE**: Area defined as an ordered list of 2 to 50 waypoints describing a planned route or corridor, rather than a polygon or geohash area. Used for trajectory-aware use cases such as route planning for an emergency vehicle, a fleet, or a drone flight corridor. The `precision` property MUST NOT be included when `areaType` is `ROUTE`.
+    - **ROUTE**: Area defined as an ordered list of 2 to 50 waypoints describing a planned ground route, rather than a polygon or geohash area. Waypoints are 2D (latitude/longitude only); this version does not support altitude-aware routes such as drone flight corridors, which are tracked as a follow-up in #102. Used for trajectory-aware use cases such as route planning for an emergency vehicle or a fleet. The `precision` property MUST NOT be included when `areaType` is `ROUTE`.
 
     **Route Segment**
-    When `area.areaType` is `ROUTE`, the result is broken down per segment instead of per grid cell. A segment is the portion of the route between two consecutive waypoints. Segments are identified by a `segmentId` that is deterministically derived from the route (format `seg-{startWaypointIndex}-{endWaypointIndex}`), so the same route produces the same segment identifiers across repeated requests. This stability is what lets a subscription (see the companion Predictive Connectivity Data Subscriptions API) filter notifications down to specific segments.
+    When `area.areaType` is `ROUTE`, the result is broken down per segment instead of per grid cell. A segment is the portion of the route between two consecutive waypoints. The forecast for a segment corresponds to the straight line between its two waypoints, with no corridor width. Where that line crosses more than one grid cell, the segment's reported connectivity level is the worst (lowest) connectivity level among the cells it crosses, per layer; this conservative choice means a segment is never reported as better than its least-connected stretch. Segments are identified by a `segmentId` that is deterministically derived from the route (format `seg-{startWaypointIndex}-{endWaypointIndex}`), so the same route produces the same segment identifiers across repeated requests. This stability is what lets a subscription (see the companion Predictive Connectivity Data Subscriptions API) filter notifications down to specific segments.
 
     **Grid Cell**
     A subdivision of the requested area.
@@ -117,7 +117,7 @@ info:
     For routes:
     - Each route segment is reported independently; a segment outside the mobile network coverage area is returned with `layerConnectivities` containing all items set to `ND`, the same convention used for an out-of-coverage geohash.
     - If every segment of the route is outside coverage, the response status is `AREA_NOT_SUPPORTED`.
-    - `height` applies to a route the same way it applies to an area: if specified, the response includes only the connectivity data for the layer containing that height, which covers the drone flight corridor use case.
+    - `height` applies to a route the same way it applies to an area: if specified, the response includes only the connectivity data for the layer containing that height. Since this version scopes routes to ground level, `height` is expected to stay close to the ground, but the property itself is unchanged and remains available as a refinement.
 
     The API normally behaves synchronously. However, large requests may trigger asynchronous processing. API Consumers may request asynchronous behavior by providing a `sink` callback URL. If asynchronous processing is not supported, the API returns `422 PREDICTIVE_CONNECTIVITY_DATA.UNSUPPORTED_ASYNC_RESPONSE`.
 
@@ -131,7 +131,7 @@ info:
     # Resources and Operations Overview
 
     The API exposes a single POST endpoint (`/retrieve`) for retrieving predictive connectivity data for a specified area, service level, network type, and time interval.
-    The API call result is an array of time slots (`timedConnectivityData`), with each time slot containing either an array of cells (`cellConnectivityData`, for `POLYGON` and `GEOHASHLIST` areas) or an array of route segments (`segmentConnectivityData`, for `ROUTE` areas), and each cell or segment containing the connectivity levels per vertical layer (see **Connectivity Level** in the definitions above). A response contains one or the other, never both, depending on the requested `area.areaType`; a plain additional property was used instead of a discriminated `oneOf` since the two arrays share the same per-layer connectivity shape and only differ in how each entry is identified (`geohash` vs `segmentId`).
+    The API call result is an array of time slots (`timedConnectivityData`), with each time slot containing either an array of cells (`cellConnectivityData`, for `POLYGON` and `GEOHASHLIST` areas) or an array of route segments (`segmentConnectivityData`, for `ROUTE` areas), and each cell or segment containing the connectivity levels per vertical layer (see **Connectivity Level** in the definitions above). A response contains one or the other, never both, depending on the requested `area.areaType`; `timedConnectivityData` is a discriminated `oneOf` of `TimedCellConnectivityData` and `TimedSegmentConnectivityData`, so `cellConnectivityData` stays strictly required for `POLYGON`/`GEOHASHLIST` and `segmentConnectivityData` is strictly required for `ROUTE`.
 
     When an asynchronous response is requested (using `sink`, see Callback URL and Token in the Relevant Terms and Definitions section above), the 202 response of the API will include an `operationId` property. This `operationId` property will also be sent in the callback payload, correlating the asynchronous response with its corresponding request. If provided, `sinkCredential.credentialType` MUST be set to `ACCESSTOKEN` or `PRIVATE_KEY_JWT`.
 
@@ -469,7 +469,7 @@ components:
       maxLength: 12
       example: ezdmemd
     GeoRoute:
-      description: Area defined as an ordered list of waypoints describing a planned route or corridor. The `precision` request property MUST NOT be set when `areaType` is `ROUTE`; if set, the API returns a `400 INVALID_ARGUMENT` error.
+      description: Area defined as an ordered list of waypoints describing a planned ground route. The `precision` request property MUST NOT be set when `areaType` is `ROUTE`; if set, the API returns a `400 INVALID_ARGUMENT` error.
       allOf:
         - $ref: '#/components/schemas/GeoArea'
         - type: object

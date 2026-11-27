@@ -455,6 +455,10 @@ components:
       required:
         - route
         - serviceLevel
+      not:
+        required:
+          - area
+          - segmentIds
       properties:
         route:
           type: array
